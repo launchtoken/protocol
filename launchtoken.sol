@@ -253,10 +253,10 @@ contract TokenLauncher {
     mapping(address => address[]) ownersTokens;
     mapping(address => address[]) ownersCrowdsales;
     
-    function launch( uint _initialSupply, string _name, string _symbol, uint _price) public {
+    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint saleType, uint[10] _intArgs, address[10] _addressArgs) public {
         
         address token =  new TokenERC20(_initialSupply, _name, _symbol);        
-        address crowdsale = new Crowdsale(token, msg.sender, _price);
+        address crowdsale = new ConstantPriceCrowdsale(token, msg.sender, _price);
         
         ERC20 tok = ERC20(token);
         
@@ -284,3 +284,35 @@ contract TokenLauncher {
         return ownersCrowdsales[_owner];
     }
 }
+
+contract TokenLauncherInterface {
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint saleType,  uint[10] _intArgs, address[10] _addressArgs) public;
+    function listTokens() public view returns (address[]);
+    function listTokensForAddress(address _owner) public view returns (address[]);
+    function listCrowdsales() public view returns (address[]) ;
+    function listCrowdsalesForAddress(address _owner) public view returns (address[]);
+}
+
+contract LaunchToken {
+    
+    TokenLauncherInterface tokenLauncher;
+    
+    address owner;
+    
+    modifier onlyOwner { require(msg.sender == owner); _; }
+    
+    constructor(address _launcher) public {
+        owner = msg.sender;
+        tokenLauncher = TokenLauncherInterface(_launcher);
+    }
+    
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint saleType,  uint[10] _intArgs, address[10] _addressArgs) public {
+        tokenLauncher.launch( _initialSupply, _name, _symbol, _price, saleType, _intArgs, _addressArgs);
+    }
+    
+    function upgradeLauncher(address _launcher) onlyOwner public {
+        tokenLauncher = TokenLauncherInterface(_launcher);
+    }
+    
+}
+

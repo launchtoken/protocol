@@ -200,7 +200,7 @@ contract TokenERC20 {
 
 }
 
-contract Crowdsale{
+contract ConstantPriceCrowdsale{
     address token;
     address owner;
     uint price;

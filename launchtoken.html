@@ -1,0 +1,920 @@
+<html>
+<head>
+    <select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
+
+
+    <div style="float:right">
+        launcher:
+        <input id="launcher" /><button onclick="upgradeLauncher()">upgrade</button>
+    </div>
+
+    <hr />
+    <h1>your tokens</h1>
+    <div id="tokens"></div>
+
+    <hr />
+    <h2>launch new</h2>
+    <div>
+        Symbol:
+        <input id="symbol" placeholder="SYM" />
+        <button onclick="launchToken()">launch</button>
+    </div>
+
+    <script src="./node_modules/web3/dist/web3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+</head>
+<body>
+
+<script>
+    if (typeof web3 !== 'undefined') {
+        console.log("USING INJECTED WEB3");
+        web3 = new Web3(web3.currentProvider);
+    } else {
+        // set the provider you want from Web3.providers
+        console.log("USING LOCAL WEB3");
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    }
+
+    var za =               "0x0000000000000000000000000000000000000000";
+
+    var launchtoken_address = "0x397100c4ff13c610ff884240a227ded010b8cd1b";
+
+    var launchTokenAbi = [
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listTokensForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listCrowdsalesForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_launcher",
+                    "type": "address"
+                }
+            ],
+            "name": "upgradeLauncher",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "tokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "crowdsaleOwners",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_initialSupply",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_name",
+                    "type": "string"
+                },
+                {
+                    "name": "_symbol",
+                    "type": "string"
+                },
+                {
+                    "name": "_price",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_saleType",
+                    "type": "uint256"
+                }
+            ],
+            "name": "launch",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "getTokenLauncher",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "tokenOwners",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "crowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "_launcher",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "token",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "crowdsale",
+                    "type": "address"
+                }
+            ],
+            "name": "TokenLaunched",
+            "type": "event"
+        }
+    ];
+    var erc20Abi = [
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "name",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "name": "tokens",
+                    "type": "uint256"
+                }
+            ],
+            "name": "approve",
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "name": "tokens",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint8"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "tokenOwner",
+                    "type": "address"
+                }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+                {
+                    "name": "balance",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "string"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "name": "tokens",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "name": "success",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "tokenOwner",
+                    "type": "address"
+                },
+                {
+                    "name": "spender",
+                    "type": "address"
+                }
+            ],
+            "name": "allowance",
+            "outputs": [
+                {
+                    "name": "remaining",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "tokens",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Transfer",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "name": "tokenOwner",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "tokens",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Approval",
+            "type": "event"
+        }
+    ];
+    var launcherAbi = [
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listTokensForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listCrowdsalesForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "tokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "crowdsaleOwners",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_initialSupply",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_name",
+                    "type": "string"
+                },
+                {
+                    "name": "_symbol",
+                    "type": "string"
+                },
+                {
+                    "name": "_price",
+                    "type": "uint256"
+                },
+                {
+                    "name": "_saleType",
+                    "type": "uint256"
+                }
+            ],
+            "name": "launch",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "tokenOwners",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "crowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "token",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "crowdsale",
+                    "type": "address"
+                }
+            ],
+            "name": "TokenLaunched",
+            "type": "event"
+        }
+    ];
+
+    var LaunchToken = null;
+    var TokenLauncher = null;
+
+    function startApp(){
+
+        web3.eth.defaultAccount = web3.eth.accounts[0];
+
+        if(!web3 || !web3.eth || !web3.eth.defaultAccount){
+            alert("Please log into Metamask, select ROPSTEN testnet network, and refresh the page");
+            return;
+        }
+
+        console.log("ACCOUNT:");
+        console.log(web3.eth.defaultAccount);
+
+
+        LaunchToken = web3.eth.contract(launchTokenAbi).at(launchtoken_address);
+        $('#contract_link').attr('href', 'https://ropsten.etherscan.io/address/' + launchtoken_address);
+        $('#contract_link').html('contract: ' + launchtoken_address);
+        console.log(LaunchToken);
+
+        //var targetSelect = document.getElementById("target");
+        var accountSelect = document.getElementById("account");
+        for(var i = 0; i < web3.eth.accounts.length; i++){
+            // var opt = document.createElement("option");
+            // opt.innerHTML = opt.value = web3.eth.accounts[i];
+            // targetSelect.appendChild(opt);
+            var opt2 = document.createElement("option");
+            opt2.innerHTML = opt2.value = web3.eth.accounts[i];
+            accountSelect.appendChild(opt2);
+        }
+
+        //loadEvents($('#page-size').val());
+        //loadBalance();
+        listTokens();
+
+
+
+        LaunchToken.listTokens.call(function(err,res){
+            console.log("TOKEN", err || res)
+        })
+
+        var launchedEvent = LaunchToken.TokenLaunched();
+        launchedEvent.watch(launchedCallback);
+
+
+    }
+
+    function launchedCallback(err, res){
+        if(!err && res.args.owner == web3.eth.defaultAccount){
+            console.log("LAUNCH EVENT", res)
+            listTokens();
+        }
+    }
+
+    function selectAccount(event){
+        web3.eth.defaultAccount = event.target.value;
+        loadBalance();
+    }
+
+    function loadBalance(){
+        LaunchToken.balanceOf(web3.eth.defaultAccount, function(err, res){
+            console.log(res);
+            $("#balance").html("" + res.div(1e18))
+        })
+    }
+
+
+    function listTokens(){
+        $("#tokens").html('');
+
+        LaunchToken.getTokenLauncher.call(function(err, res) {
+            console.log("LAUNCHER", res);
+            $('#launcher').val(res);
+        })
+
+        LaunchToken.listTokens.call(function(err, res){
+            console.log("LAUNCHTOKEN TOKENS",  err||res);
+            for(var t in res) {
+                function addTokenDiv() {
+                    var div = document.createElement('div');
+                    div.id = res[t];
+                    //div.innerHTML = res[t];
+                    $("#tokens").append(div);
+
+                    var erc20 = web3.eth.contract(erc20Abi).at(res[t]);
+                    erc20.symbol.call(function (err, res) {
+                        div.innerHTML = res;
+                    })
+                }
+
+                addTokenDiv();
+            }
+        })
+    }
+
+    function upgradeLauncher(){
+        var addr = $('#launcher').val();
+        console.log(addr);
+
+        LaunchToken.upgradeLauncher(addr, function(err, res){
+            console.log("upgrade?", err||res)
+        })
+    }
+
+
+    function launchToken(){
+        var symbol = $("#symbol").val();
+        console.log("launching", symbol);
+
+        console.log("as,", web3.eth.defaultAccount);
+
+        //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType
+        LaunchToken.launch('1000000000', symbol, symbol, '100000000', '1',
+            {gas: 2000000, from: web3.eth.defaultAccount}, function(err, res){
+            console.log("LAUNCHED TOKEN:",err || res);
+        })
+    }
+
+    setTimeout(startApp, 500);
+</script>
+</body>
+</html>

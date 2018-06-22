@@ -1,6 +1,11 @@
  pragma solidity ^0.4.21;
- 
+
  contract ERC20 {
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+    uint256 public totalSupply;
+
     function totalSupply() public constant returns (uint);
     function balanceOf(address tokenOwner) public constant returns (uint balance);
     function allowance(address tokenOwner, address spender) public constant returns (uint remaining);
@@ -11,7 +16,7 @@
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
- 
+
 library SafeMath {
     function mul(uint a, uint b) internal pure returns (uint) {
         uint c = a * b;
@@ -76,10 +81,11 @@ contract TokenERC20 {
     constructor(
         uint256 initialSupply,
         string tokenName,
-        string tokenSymbol
+        string tokenSymbol,
+        address owner
     ) public {
         totalSupply = initialSupply * 10 ** uint256(decimals);  // Update total supply with the decimal amount
-        balanceOf[msg.sender] = totalSupply;                // Give the creator all initial tokens
+        balanceOf[owner] = totalSupply;                // Give the creator all initial tokens
         name = tokenName;                                   // Set the name for display purposes
         symbol = tokenSymbol;                               // Set the symbol for display purposes
     }
@@ -205,41 +211,64 @@ contract ConstantPriceCrowdsale{
     address owner;
     uint price;
     bool finished = false;
-    
+
     constructor(address _token, address _owner, uint _price) public {
         token = _token;
         owner = _owner;
         price = _price;
     }
-    
+
     bool started = false;
-    
+
     function finish() public {
         assert(started);
         finished = true;
     }
-    
+
     function() public payable {
         assert(started);
         assert(!finished);
-        
+
         ERC20 tok = ERC20(token);
         uint remaining = tok.balanceOf(this);
-        
+
         uint amount = msg.value / price;
-        
+
         assert(amount < remaining);
-        
+
         tok.transfer(msg.sender, amount);
     }
-    
+
     function withdraw() public {
         assert(msg.sender == owner);
         assert(finished);
-        
+
         msg.sender.transfer(this.balance);
     }
-    
+
+}
+
+contract Child{
+    string public name;
+    string public symbol;
+    uint8 public decimals = 18;
+    // 18 decimals is the strongly suggested default, avoid changing it
+    uint256 public totalSupply;
+
+    // This creates an array with all balances
+    mapping (address => uint256) public balanceOf;
+
+    constructor(
+        uint256 initialSupply,
+        string tokenName,
+        string tokenSymbol,
+        address owner
+    ) public {
+        totalSupply = initialSupply * 10 ** uint256(decimals);  // Update total supply with the decimal amount
+        balanceOf[owner] = totalSupply;                // Give the creator all initial tokens
+        name = tokenName;                                   // Set the name for display purposes
+        symbol = tokenSymbol;
+    }
 }
 
 contract TokenLauncher {
@@ -247,46 +276,61 @@ contract TokenLauncher {
     constructor() public {
         owner = msg.sender;
     }
-    
-    mapping(address => address) tokenOwners;
-    mapping(address => address) crowdsaleOwners;
-    mapping(address => address[]) ownersTokens;
-    mapping(address => address[]) ownersCrowdsales;
-    
-    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint saleType, uint[10] _intArgs, address[10] _addressArgs) public {
-        
-        address token =  new TokenERC20(_initialSupply, _name, _symbol);        
-        address crowdsale = new ConstantPriceCrowdsale(token, msg.sender, _price);
-        
-        ERC20 tok = ERC20(token);
-        
-        tok.transfer(crowdsale, _initialSupply);
-                
-        tokenOwners[token] = msg.sender;
-        crowdsaleOwners[crowdsale] = msg.sender;
-        ownersTokens[msg.sender].push(token);
-        ownersCrowdsales[msg.sender].push(crowdsale);
+
+    address[] public tokens;
+    address[] public crowdsales;
+
+    mapping(address => address) public tokenOwners;
+    mapping(address => address) public crowdsaleOwners;
+    mapping(address => address[]) public ownersTokens;
+    mapping(address => address[]) public ownersCrowdsales;
+
+    event TokenLaunched(address owner, address token, address crowdsale);
+
+    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public returns (address, address) { //uint[10] _intArgs, address[10] _addressArgs
+
+        //Child token1 = new Child(_initialSupply, _name, _symbol, tx.origin);
+
+        address token =  new TokenERC20(_initialSupply, _name, _symbol, tx.origin);
+        address crowdsale = new ConstantPriceCrowdsale(token, tx.origin, _price);
+
+        emit TokenLaunched(tx.origin, token, crowdsale);
+
+        tokens.push(token);
+        crowdsales.push(crowdsale);
+
+        //ERC20 tok = ERC20(token);
+
+        //ERC20(token).transfer(crowdsale, _initialSupply);
+
+        tokenOwners[token] = tx.origin;
+        ownersTokens[tx.origin].push(token);
+
+        crowdsaleOwners[crowdsale] = tx.origin;
+        ownersCrowdsales[tx.origin].push(crowdsale);
+
+        return (token, crowdsale);
     }
-    
+
     function listTokens() public view returns (address[]) {
         return ownersTokens[msg.sender];
     }
-    
+
     function listTokensForAddress(address _owner) public view returns (address[]) {
         return ownersTokens[_owner];
     }
-    
+
     function listCrowdsales() public view returns (address[]) {
         return ownersCrowdsales[msg.sender];
     }
-    
+
     function listCrowdsalesForAddress(address _owner) public view returns (address[]) {
         return ownersCrowdsales[_owner];
     }
 }
 
 contract TokenLauncherInterface {
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint saleType,  uint[10] _intArgs, address[10] _addressArgs) public;
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public returns (address, address);
     function listTokens() public view returns (address[]);
     function listTokensForAddress(address _owner) public view returns (address[]);
     function listCrowdsales() public view returns (address[]) ;
@@ -294,25 +338,63 @@ contract TokenLauncherInterface {
 }
 
 contract LaunchToken {
-    
+
     TokenLauncherInterface tokenLauncher;
-    
+
     address owner;
-    
+
+    address[] public tokens;
+    address[] public crowdsales;
+
+    mapping(address => address) public tokenOwners;
+    mapping(address => address) public crowdsaleOwners;
+    mapping(address => address[]) public ownersTokens;
+    mapping(address => address[]) public ownersCrowdsales;
+
+    event TokenLaunched(address owner, address token, address crowdsale);
+
     modifier onlyOwner { require(msg.sender == owner); _; }
-    
+
     constructor(address _launcher) public {
         owner = msg.sender;
         tokenLauncher = TokenLauncherInterface(_launcher);
     }
-    
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint saleType,  uint[10] _intArgs, address[10] _addressArgs) public {
-        tokenLauncher.launch( _initialSupply, _name, _symbol, _price, saleType, _intArgs, _addressArgs);
+
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public {
+        (address token, address crowdsale) = tokenLauncher.launch(_initialSupply, _name, _symbol, _price, _saleType);
+
+        tokenOwners[token] = msg.sender;
+        ownersTokens[msg.sender].push(token);
+
+        crowdsaleOwners[crowdsale] = msg.sender;
+        ownersCrowdsales[msg.sender].push(crowdsale);
+
+        tokens.push(token);
+        crowdsales.push(crowdsale);
+
+        emit TokenLaunched(msg.sender, token, crowdsale);
     }
-    
+
     function upgradeLauncher(address _launcher) onlyOwner public {
         tokenLauncher = TokenLauncherInterface(_launcher);
     }
-    
-}
 
+    //track tokens
+    function listTokens() public view returns (address[]) {
+        return ownersTokens[msg.sender];
+    }
+    function listTokensForAddress(address _owner) public view returns (address[]) {
+        return ownersTokens[_owner];
+    }
+    function listCrowdsales() public view returns (address[]) {
+        return ownersCrowdsales[msg.sender];
+    }
+    function listCrowdsalesForAddress(address _owner) public view returns (address[]) {
+        return ownersCrowdsales[_owner];
+    }
+
+
+    function getTokenLauncher() public view returns(address){
+        return tokenLauncher;
+    }
+}

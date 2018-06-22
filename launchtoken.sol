@@ -234,7 +234,7 @@ contract ConstantPriceCrowdsale{
 
         uint amount = msg.value / price;
 
-        assert(amount < remaining);
+        assert(amount <= remaining);
 
         tok.transfer(msg.sender, amount);
     }

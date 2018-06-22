@@ -355,9 +355,10 @@ contract LaunchToken {
 
     modifier onlyOwner { require(msg.sender == owner); _; }
 
-    constructor(address _launcher) public {
+    constructor() public {
         owner = msg.sender;
-        tokenLauncher = TokenLauncherInterface(_launcher);
+        address launcher = new TokenLauncher();
+        tokenLauncher = TokenLauncherInterface(launcher);
     }
 
     function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public {

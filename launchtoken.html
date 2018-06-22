@@ -1,29 +1,32 @@
 <html>
 <head>
-    <select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
-
-
-    <div style="float:right">
-        launcher:
-        <input id="launcher" /><button onclick="upgradeLauncher()">upgrade</button>
-    </div>
-
-    <hr />
-    <h1>your tokens</h1>
-    <div id="tokens"></div>
-
-    <hr />
-    <h2>launch new</h2>
-    <div>
-        Symbol:
-        <input id="symbol" placeholder="SYM" />
-        <button onclick="launchToken()">launch</button>
-    </div>
-
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" type="text/css" />
     <script src="./node_modules/web3/dist/web3.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 </head>
 <body>
+<select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
+
+
+<div style="float:right">
+    launcher:
+    <input id="launcher" /><button onclick="upgradeLauncher()">upgrade</button>
+</div>
+
+<hr />
+<h1>your tokens</h1>
+<table id="tokens" class="table">
+    <th>symbol</th><th>address</th><th>crowdsale</th>
+</table>
+
+<hr />
+<h2>launch new</h2>
+<div>
+    Symbol:
+    <input id="symbol" placeholder="SYM" />
+    <button onclick="launchToken()">launch</button>
+</div>
+
 
 <script>
     if (typeof web3 !== 'undefined') {
@@ -862,32 +865,62 @@
         })
     }
 
+    function clearTable(table) {
+        var rows = table.rows;
+        var i = rows.length;
+        while (--i) {
+            rows[i].parentNode.removeChild(rows[i]);
+            // or
+            // table.deleteRow(i);
+        }
+    }
 
     function listTokens(){
-        $("#tokens").html('');
 
         LaunchToken.getTokenLauncher.call(function(err, res) {
             console.log("LAUNCHER", res);
             $('#launcher').val(res);
         })
 
+        var table = document.getElementById('tokens');
+
+        clearTable(table);
+
         LaunchToken.listTokens.call(function(err, res){
             console.log("LAUNCHTOKEN TOKENS",  err||res);
-            for(var t in res) {
-                function addTokenDiv() {
-                    var div = document.createElement('div');
-                    div.id = res[t];
-                    //div.innerHTML = res[t];
-                    $("#tokens").append(div);
 
-                    var erc20 = web3.eth.contract(erc20Abi).at(res[t]);
-                    erc20.symbol.call(function (err, res) {
-                        div.innerHTML = res;
-                    })
+            LaunchToken.listCrowdsales.call(function(err, res2){
+
+                for(var t in res) {
+                    function addTokenDiv() {
+                        var row = document.createElement('tr');
+
+                        var symbol = document.createElement('td');
+                        symbol.id = res[t];
+                        row.appendChild(symbol);
+
+                        var address = document.createElement("td")
+                        address.innerHTML = "<small>" + res[t] + "</small>";
+                        row.appendChild(address);
+
+                        var address2 = document.createElement("td")
+                        address2.innerHTML = "<small>" + res2[t] + "</small>";
+                        row.appendChild(address2);
+
+                        var erc20 = web3.eth.contract(erc20Abi).at(res[t]);
+                        erc20.symbol.call(function (err, res) {
+                            symbol.innerHTML = res;
+                        })
+
+                        table.append(row);
+                    }
+
+                    addTokenDiv();
                 }
 
-                addTokenDiv();
-            }
+
+
+            })
         })
     }
 

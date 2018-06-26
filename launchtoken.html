@@ -30,6 +30,7 @@
 
 <script>
     var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
+    var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
@@ -821,7 +822,7 @@
 
 
         LaunchToken = web3.eth.contract(launchTokenAbi).at(launchtoken_address);
-        $('#contract_link').attr('href', 'https://ropsten.etherscan.io/address/' + launchtoken_address);
+        $('#contract_link').attr('href', etherscan_base_url + launchtoken_address);
         $('#contract_link').html('contract'); // + launchtoken_address
         console.log(LaunchToken);
 
@@ -906,11 +907,11 @@
                         row.appendChild(symbol);
 
                         var address = document.createElement("td")
-                        address.innerHTML = "<small>" + res[t] + "</small>";
+                        address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + res[t] + "'>" + res[t] + "</a></small>";
                         row.appendChild(address);
 
                         var address2 = document.createElement("td")
-                        address2.innerHTML = "<small>" + res2[t] + "</small>";
+                        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + res2[t] + "'>" + res2[t] + "</a></small>";
                         row.appendChild(address2);
 
                         var erc20 = web3.eth.contract(erc20Abi).at(res[t]);

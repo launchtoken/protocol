@@ -6,7 +6,7 @@
 </head>
 <body>
 <select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
-<a id="contract_link">contract</a>
+<a id="contract_link" target="_blank"></a>
 
 <div style="float:right">
     launcher:
@@ -822,7 +822,7 @@
 
         LaunchToken = web3.eth.contract(launchTokenAbi).at(launchtoken_address);
         $('#contract_link').attr('href', 'https://ropsten.etherscan.io/address/' + launchtoken_address);
-        //$('#contract_link').html('contract: ' + launchtoken_address);
+        $('#contract_link').html('contract'); // + launchtoken_address
         console.log(LaunchToken);
 
         //var targetSelect = document.getElementById("target");

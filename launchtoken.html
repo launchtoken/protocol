@@ -29,9 +29,12 @@
 
 
 <script>
+    var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
+
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
+        launchtoken_address = '0xddb8587dbabd3da5c3cd53241f54cd42e750f746';
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");
@@ -40,7 +43,6 @@
 
     var za =               "0x0000000000000000000000000000000000000000";
 
-    var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
 
     var launchTokenAbi = [
         {

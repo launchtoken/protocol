@@ -34,11 +34,39 @@
 
 <hr />
 <h2>launch new</h2>
-<div>
-    Symbol:
-    <input id="symbol" placeholder="SYM" />
-    <button onclick="launchToken()">launch</button>
-</div>
+
+<table>
+    <tr>
+        <td>Type</td>
+        <td><select style="width:100%"><option value="1">Flat Price</option></select></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Symbol:</td>
+        <td><input id="symbol" type="text" placeholder="SYM" /></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Name:</td>
+        <td><input id="name" type="text" placeholder="TokenName" /></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Supply:</td>
+        <td><input id="supply" type="number" value="1000000000" /></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>Price:</td>
+        <td><input id="price" type="number" value="0.25" /></td>
+        <td>ETH</td>
+    </tr>
+    <tr>
+        <td></td>
+        <td><button style="float:right" class="pull-right" onclick="launchToken()">launch</button></td>
+        <td></td>
+    </tr>
+</table>
 
 <div id="spinner">
 </div>
@@ -963,12 +991,17 @@
 
     function launchToken(){
         var symbol = $("#symbol").val();
+        var name = $("#name").val();
+        var price = $("#price").val();
+        var supply = $('#supply').val();
+        var sale_type = $('#sale_type').val();
+
         console.log("launching", symbol);
 
         console.log("as,", web3.eth.defaultAccount);
 
-        //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType
-        LaunchToken.launch('1000000000', symbol, symbol, '100000000', '1', "0",
+        //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, uint _whitelist
+        LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, "0",
             {gas: 6000000, from: web3.eth.defaultAccount}, function(err, res){
             console.log("LAUNCHED TOKEN:",err || res);
 

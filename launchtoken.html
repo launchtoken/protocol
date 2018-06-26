@@ -40,7 +40,7 @@
 
     var za =               "0x0000000000000000000000000000000000000000";
 
-    var launchtoken_address = "0x397100c4ff13c610ff884240a227ded010b8cd1b";
+    var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
 
     var launchTokenAbi = [
         {
@@ -206,6 +206,10 @@
                 {
                     "name": "_saleType",
                     "type": "uint256"
+                },
+                {
+                    "name": "_whitelist",
+                    "type": "bool"
                 }
             ],
             "name": "launch",
@@ -290,12 +294,7 @@
             "type": "function"
         },
         {
-            "inputs": [
-                {
-                    "name": "_launcher",
-                    "type": "address"
-                }
-            ],
+            "inputs": [],
             "payable": false,
             "stateMutability": "nonpayable",
             "type": "constructor"
@@ -317,6 +316,11 @@
                     "indexed": false,
                     "name": "crowdsale",
                     "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "symbol",
+                    "type": "string"
                 }
             ],
             "name": "TokenLaunched",
@@ -912,6 +916,10 @@
                             symbol.innerHTML = res;
                         })
 
+                        erc20.balanceOf.call(res2[t], function(err,res){
+                            console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
+                        })
+
                         table.append(row);
                     }
 
@@ -941,8 +949,8 @@
         console.log("as,", web3.eth.defaultAccount);
 
         //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType
-        LaunchToken.launch('1000000000', symbol, symbol, '100000000', '1',
-            {gas: 2000000, from: web3.eth.defaultAccount}, function(err, res){
+        LaunchToken.launch('1000000000', symbol, symbol, '100000000', '1', "0",
+            {gas: 6000000, from: web3.eth.defaultAccount}, function(err, res){
             console.log("LAUNCHED TOKEN:",err || res);
         })
     }

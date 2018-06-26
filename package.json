@@ -4,7 +4,8 @@
   "description": "platform to launch tokens and token sales",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,7 @@
   },
   "homepage": "https://github.com/melnx/launchtoken#readme",
   "dependencies": {
+    "express": "^4.16.3",
     "web3": "github:ethereum/web3.js"
   }
 }

@@ -119,8 +119,9 @@ contract TokenERC20 {
      * @param _to The address of the recipient
      * @param _value the amount to send
      */
-    function transfer(address _to, uint256 _value) public {
+    function transfer(address _to, uint256 _value) public returns(bool success) {
         _transfer(msg.sender, _to, _value);
+        return true;
     }
 
     /**
@@ -211,11 +212,15 @@ contract ConstantPriceCrowdsale{
     address owner;
     uint price;
     bool finished = false;
+    bool useWhitelist = false;
 
-    constructor(address _token, address _owner, uint _price) public {
+    mapping(address => bool) whitelisted;
+
+    constructor(address _token, address _owner, uint _price, bool _whitelist) public {
         token = _token;
         owner = _owner;
         price = _price;
+        useWhitelist = _whitelist;
     }
 
     bool started = false;
@@ -228,6 +233,8 @@ contract ConstantPriceCrowdsale{
     function() public payable {
         assert(started);
         assert(!finished);
+
+        if(useWhitelist && !whitelisted[msg.sender]) revert();
 
         ERC20 tok = ERC20(token);
         uint remaining = tok.balanceOf(this);
@@ -246,29 +253,26 @@ contract ConstantPriceCrowdsale{
         msg.sender.transfer(this.balance);
     }
 
+    function whitelist(address user) public {
+        assert(msg.sender == owner);
+
+        whitelisted[user] = true;
+    }
+
+    function take(address token, uint amount) public {
+        ERC20(token).transferFrom(msg.sender, this, amount);
+    }
+
+    function setInfo(address _token, address _owner){
+        require(msg.sender == owner);
+        token = _token;
+        owner = _owner;
+    }
 }
 
-contract Child{
-    string public name;
-    string public symbol;
-    uint8 public decimals = 18;
-    // 18 decimals is the strongly suggested default, avoid changing it
-    uint256 public totalSupply;
-
-    // This creates an array with all balances
-    mapping (address => uint256) public balanceOf;
-
-    constructor(
-        uint256 initialSupply,
-        string tokenName,
-        string tokenSymbol,
-        address owner
-    ) public {
-        totalSupply = initialSupply * 10 ** uint256(decimals);  // Update total supply with the decimal amount
-        balanceOf[owner] = totalSupply;                // Give the creator all initial tokens
-        name = tokenName;                                   // Set the name for display purposes
-        symbol = tokenSymbol;
-    }
+contract Crowdsale {
+    function take(address token, uint amount) public;
+    function setInfo(address token, address owner) public;
 }
 
 contract TokenLauncher {
@@ -285,29 +289,28 @@ contract TokenLauncher {
     mapping(address => address[]) public ownersTokens;
     mapping(address => address[]) public ownersCrowdsales;
 
-    event TokenLaunched(address owner, address token, address crowdsale);
+    event TokenLaunched(address owner, address token, address crowdsale, string symbol, uint balance);
 
-    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public returns (address, address) { //uint[10] _intArgs, address[10] _addressArgs
+    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public returns (address, address) { //uint[10] _intArgs, address[10] _addressArgs
 
-        //Child token1 = new Child(_initialSupply, _name, _symbol, tx.origin);
-
-        address token =  new TokenERC20(_initialSupply, _name, _symbol, tx.origin);
-        address crowdsale = new ConstantPriceCrowdsale(token, tx.origin, _price);
-
-        emit TokenLaunched(tx.origin, token, crowdsale);
+        address token =  new TokenERC20(_initialSupply, _name, _symbol, this);
+        address crowdsale = new ConstantPriceCrowdsale(token, tx.origin, _price, _whitelist);
 
         tokens.push(token);
         crowdsales.push(crowdsale);
 
-        //ERC20 tok = ERC20(token);
+        ERC20 tok = ERC20(token);
+        uint amount = _initialSupply * 10 ** 18;
 
-        //ERC20(token).transfer(crowdsale, _initialSupply);
+        tok.transfer(crowdsale, amount);
 
         tokenOwners[token] = tx.origin;
         ownersTokens[tx.origin].push(token);
 
         crowdsaleOwners[crowdsale] = tx.origin;
         ownersCrowdsales[tx.origin].push(crowdsale);
+
+        emit TokenLaunched(tx.origin, token, crowdsale, _symbol, tok.balanceOf(this));
 
         return (token, crowdsale);
     }
@@ -330,7 +333,7 @@ contract TokenLauncher {
 }
 
 contract TokenLauncherInterface {
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public returns (address, address);
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public returns (address, address);
     function listTokens() public view returns (address[]);
     function listTokensForAddress(address _owner) public view returns (address[]);
     function listCrowdsales() public view returns (address[]) ;
@@ -351,7 +354,7 @@ contract LaunchToken {
     mapping(address => address[]) public ownersTokens;
     mapping(address => address[]) public ownersCrowdsales;
 
-    event TokenLaunched(address owner, address token, address crowdsale);
+    event TokenLaunched(address owner, address token, address crowdsale, string symbol);
 
     modifier onlyOwner { require(msg.sender == owner); _; }
 
@@ -361,8 +364,8 @@ contract LaunchToken {
         tokenLauncher = TokenLauncherInterface(launcher);
     }
 
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType) public {
-        (address token, address crowdsale) = tokenLauncher.launch(_initialSupply, _name, _symbol, _price, _saleType);
+    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public {
+        (address token, address crowdsale) = tokenLauncher.launch(_initialSupply, _name, _symbol, _price, _saleType, _whitelist);
 
         tokenOwners[token] = msg.sender;
         ownersTokens[msg.sender].push(token);
@@ -373,7 +376,7 @@ contract LaunchToken {
         tokens.push(token);
         crowdsales.push(crowdsale);
 
-        emit TokenLaunched(msg.sender, token, crowdsale);
+        emit TokenLaunched(msg.sender, token, crowdsale, _symbol);
     }
 
     function upgradeLauncher(address _launcher) onlyOwner public {

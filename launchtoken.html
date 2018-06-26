@@ -3,6 +3,18 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" type="text/css" />
     <script src="./node_modules/web3/dist/web3.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <style>
+        #spinner {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top:0;
+            left:0;
+            background: rgba(0,0,0,.5) url(https://loading.io/spinners/double-ring/lg.double-ring-spinner.gif) center center no-repeat;
+            opacity: .5;
+            display:none;
+        }
+    </style>
 </head>
 <body>
 <select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
@@ -27,6 +39,8 @@
     <button onclick="launchToken()">launch</button>
 </div>
 
+<div id="spinner">
+</div>
 
 <script>
     var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
@@ -857,6 +871,7 @@
         if(!err && res.args.owner == web3.eth.defaultAccount){
             console.log("LAUNCH EVENT", res)
             listTokens();
+            hideSpinner();
         }
     }
 
@@ -955,8 +970,23 @@
         LaunchToken.launch('1000000000', symbol, symbol, '100000000', '1', "0",
             {gas: 6000000, from: web3.eth.defaultAccount}, function(err, res){
             console.log("LAUNCHED TOKEN:",err || res);
+
+            showSpinner();
         })
     }
+
+    function setSpinnerDisplay(display){
+        document.getElementById("spinner").style.display = display;
+    }
+
+    function showSpinner(){
+        setSpinnerDisplay('block');
+    }
+    function hideSpinner(){
+        setSpinnerDisplay('none');
+    }
+
+
 
     setTimeout(startApp, 500);
 </script>

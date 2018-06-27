@@ -1,0 +1,665 @@
+<html>
+<head>
+    <title>LaunchToken Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" type="text/css" />
+    <script src="./node_modules/web3/dist/web3.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+</head>
+<body style="background-color:lightblue">
+
+<div style="max-width:800px; margin-left:auto; margin-right:auto; background: white; padding:15px; margin-top:20px;">
+    <center>
+        <h1>Amount Raised <span id="amount-raised"></span></h1>
+
+        <hr />
+
+        <div>
+            <input placeholder="0" id="amount-to-buy" /><span style="margin-left:-35px; color:lightgray;">ETH</span><button id="buy-button">buy</button>
+            <br />
+            <span id="token-amount"></span> <span id="token-symbol"></span>
+            @ <span id="token-price"></span> ETH
+
+        </div>
+
+    </center>
+</div>
+
+<script>
+    if (typeof web3 !== 'undefined') {
+        console.log("USING INJECTED WEB3");
+        web3 = new Web3(web3.currentProvider);
+        launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
+    } else {
+        // set the provider you want from Web3.providers
+        console.log("USING LOCAL WEB3");
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    }
+
+    function startApp(crowdsale_address){
+        var crowdsaleAbi = [
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "initialBalance",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "started",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "withdraw",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getAmountRaised",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "owner",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "startingBalance",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "whitelist",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "price",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "start",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "finished",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "withdrawn",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "currentBalance",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "finish",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "name": "whitelisted",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "useWhitelist",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "raised",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "token",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "fallback"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "starter",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "initialBalance",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Started",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "finisher",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "initialBalance",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "availableBalance",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Finished",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "withdrawer",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Withdrawn",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "Whitelisted",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "user",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "deposit",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "gained",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Deposited",
+                "type": "event"
+            }
+        ];
+        var erc20Abi = [
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "name",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "name": "tokens",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "approve",
+                "outputs": [
+                    {
+                        "name": "success",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "name": "tokens",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [
+                    {
+                        "name": "success",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint8"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "tokenOwner",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "name": "balance",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "symbol",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "string"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "name": "tokens",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transfer",
+                "outputs": [
+                    {
+                        "name": "success",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "tokenOwner",
+                        "type": "address"
+                    },
+                    {
+                        "name": "spender",
+                        "type": "address"
+                    }
+                ],
+                "name": "allowance",
+                "outputs": [
+                    {
+                        "name": "remaining",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "name": "from",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "name": "to",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "tokens",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Transfer",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": true,
+                        "name": "tokenOwner",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": true,
+                        "name": "spender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "tokens",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Approval",
+                "type": "event"
+            }
+        ];
+
+        var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
+        var token_address = null;
+
+        web3.eth.defaultAccount = web3.eth.accounts[0];
+
+        if(!web3 || !web3.eth || !web3.eth.defaultAccount){
+            alert("Please log into Metamask, select ROPSTEN testnet network, and refresh the page");
+            return;
+        }
+
+        console.log("ACCOUNT:");
+        console.log(web3.eth.defaultAccount);
+
+        var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+
+        var price = 0;
+
+        function calculateAmountBought(){
+            var ethAmountStr = $('#amount-to-buy').val();;
+            var ethAmount =  ethAmountStr ? parseFloat(ethAmountStr) : 0;
+
+            $('#token-amount').html( (ethAmount / price) * 1e18);
+        }
+
+        crowdsale.token.call(function(err, tok_address){
+            token_address = tok_address;
+            var token = web3.eth.contract(erc20Abi).at(token_address);
+
+
+            token.symbol.call(function(err, symbol){
+                $('#token-symbol').html(symbol);
+            })
+        })
+
+        crowdsale.price.call(function(err, sale_price) {
+            price = sale_price;
+            console.log("price", price)
+            $("#token-price").html(price.div(1e18).toString());
+            calculateAmountBought();
+        })
+
+
+        crowdsale.currentBalance.call(function(err, bal){
+            console.log("current balance", bal.toNumber()/1e18)
+        })
+
+        function loadAmountRaised() {
+            crowdsale.getAmountRaised.call(function (err, res) {
+                $("#amount-raised").html( (res / 1e18) + " ETH" );
+            })
+        }
+
+        $("#amount-to-buy").on("keyup", calculateAmountBought);
+
+        crowdsale.Deposited().watch(loadAmountRaised);
+        loadAmountRaised();
+
+        function buyTokens(){
+            console.log("BUYING TOKENS", web3.eth.defaultAccount, parseFloat($('#amount-to-buy').val()))
+            web3.eth.sendTransaction({
+                from: web3.eth.defaultAccount,
+                to: crowdsale_address,
+                gas: 2000000,
+                value: parseFloat($('#amount-to-buy').val()) + "e18"
+            }, function(err, res){
+                console.log(err || res)
+                if(!err){
+                    $('#amount-to-buy').val('')
+                    calculateAmountBought();
+                }
+            })
+
+        }
+
+        $('#buy-button').on("click", buyTokens);
+    }
+
+    setTimeout(function(){
+        startApp('0x1f7127aa3ef43dcb48ffb5dd887fa8820a65e2fa');
+    }, 500);
+</script>
+
+</body>
+</html>

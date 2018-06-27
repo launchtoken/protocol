@@ -39,7 +39,7 @@
 <table>
     <tr>
         <td>Type</td>
-        <td><select style="width:100%" id="sale_type"><option value="1">Flat Price</option></select></td>
+        <td><select style="width:100%" id="sale_type"><option value="0">Flat Price</option></select></td>
     </tr>
     <tr>
         <td>Symbol:</td>
@@ -1263,6 +1263,106 @@
         }
     }
 
+    function addTokenDiv(table, res, res2, t) {
+        var row = document.createElement('tr');
+
+        var token_address = res[t];
+        var crowdsale_address = res2[t];
+
+        var symbol = document.createElement('td');
+        symbol.id = token_address;
+        row.appendChild(symbol);
+
+        var address = document.createElement("td");
+        address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + token_address + "'>" + token_address + "</a></small>";
+        row.appendChild(address);
+
+        var address2 = document.createElement("td");
+        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + crowdsale_address + "'>" + crowdsale_address + "</a></small>";
+        row.appendChild(address2);
+
+        var erc20 = web3.eth.contract(erc20Abi).at(token_address);
+        erc20.symbol.call(function (err, res) {
+            symbol.innerHTML = res;
+        });
+
+        erc20.balanceOf.call(crowdsale_address, function(err,res){
+            console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
+        });
+
+        var status = document.createElement("td");
+        status.id = crowdsale_address;
+
+        var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+
+        crowdsale.Started().watch(loadCrowdsaleStatus);
+        crowdsale.Finished().watch(loadCrowdsaleStatus);
+        crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
+        crowdsale.Deposited().watch(loadAmountRaised);
+
+        function loadCrowdsaleStatus() {
+            hideSpinner();
+            crowdsale.withdrawn.call(function (err, withdrawn) {
+            crowdsale.started.call(function (err, started) {
+            crowdsale.finished.call(function (err, finished) {
+                var stat = document.createElement("span");
+                var btn = document.createElement("button");
+                if (started && !finished) {
+                    stat.innerHTML = "started";
+                    btn.innerHTML = "finish";
+                    btn.onclick = function () {
+                        crowdsale.finish(function (err, res) {
+                            showSpinner();
+                        })
+                    }
+                } else if (finished) {
+                    if(!withdrawn) {
+                        btn.innerHTML = "withdraw";
+                        btn.onclick = function () {
+                            crowdsale.withdraw(function (err, res) {
+                                showSpinner();
+                            })
+                        }
+                        stat.innerHTML = "finished";
+                    }else{
+                        stat.innerHTML = "completed"
+                    }
+                } else {
+                    stat.innerHTML = "new";
+                    btn.innerHTML = "start";
+                    btn.onclick = function () {
+                        crowdsale.start(function (err, res) {
+                            showSpinner();
+                        })
+                    }
+                }
+
+                status.innerHTML = "";
+                status.appendChild(stat);
+                if(btn.innerHTML) status.appendChild(btn);
+            });
+            });
+            });
+
+        }
+        row.append(status);
+        loadCrowdsaleStatus();
+
+
+        var raised = document.createElement("td");
+        raised.style.textAlign = "right";
+        function loadAmountRaised() {
+            crowdsale.getAmountRaised.call(function (err, res) {
+                raised.innerHTML = res / 1e18;
+            })
+        }
+        row.append(raised);
+        loadAmountRaised();
+
+
+        table.append(row);
+    }
+
     function listTokens(){
 
         LaunchToken.getTokenLauncher.call(function(err, res) {
@@ -1280,112 +1380,8 @@
             LaunchToken.listCrowdsales.call(function(err, res2){
 
                 for(var t in res) {
-                    function addTokenDiv() {
-                        var row = document.createElement('tr');
-
-                        var token_address = res[t];
-                        var crowdsale_address = res2[t];
-
-                        var symbol = document.createElement('td');
-                        symbol.id = token_address;
-                        row.appendChild(symbol);
-
-                        var address = document.createElement("td");
-                        address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + token_address + "'>" + token_address + "</a></small>";
-                        row.appendChild(address);
-
-                        var address2 = document.createElement("td");
-                        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + crowdsale_address + "'>" + crowdsale_address + "</a></small>";
-                        row.appendChild(address2);
-
-                        var erc20 = web3.eth.contract(erc20Abi).at(token_address);
-                        erc20.symbol.call(function (err, res) {
-                            symbol.innerHTML = res;
-                        });
-
-                        erc20.balanceOf.call(crowdsale_address, function(err,res){
-                            console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
-                        });
-
-                        var status = document.createElement("td");
-                        status.id = crowdsale_address;
-
-                        var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
-
-                        crowdsale.Started().watch(loadCrowdsaleStatus);
-                        crowdsale.Finished().watch(loadCrowdsaleStatus);
-                        crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
-                        crowdsale.Deposited().watch(loadAmountRaised);
-
-                        function loadCrowdsaleStatus() {
-                            hideSpinner();
-                            crowdsale.withdrawn.call(function (err, withdrawn) {
-                            crowdsale.started.call(function (err, started) {
-                            crowdsale.finished.call(function (err, finished) {
-                                var stat = document.createElement("span");
-                                var btn = document.createElement("button");
-                                if (started && !finished) {
-                                    stat.innerHTML = "started";
-                                    btn.innerHTML = "finish";
-                                    btn.onclick = function () {
-                                        crowdsale.finish(function (err, res) {
-                                            showSpinner();
-                                        })
-                                    }
-                                } else if (finished) {
-                                    if(!withdrawn) {
-                                        btn.innerHTML = "withdraw";
-                                        btn.onclick = function () {
-                                            crowdsale.withdraw(function (err, res) {
-                                                showSpinner();
-                                            })
-                                        }
-                                        stat.innerHTML = "finished";
-                                    }else{
-                                        stat.innerHTML = "completed"
-                                    }
-                                } else {
-                                    stat.innerHTML = "new";
-                                    btn.innerHTML = "start";
-                                    btn.onclick = function () {
-                                        crowdsale.start(function (err, res) {
-                                            showSpinner();
-                                        })
-                                    }
-                                }
-
-                                status.innerHTML = "";
-                                status.appendChild(stat);
-                                if(btn.innerHTML) status.appendChild(btn);
-                            });
-                            });
-                            });
-
-                        }
-                        row.append(status);
-                        loadCrowdsaleStatus();
-
-
-                        var raised = document.createElement("td");
-                        raised.style.textAlign = "right";
-                        function loadAmountRaised() {
-                            crowdsale.getAmountRaised.call(function (err, res) {
-                                raised.innerHTML = res / 1e18;
-                            })
-                        }
-                        row.append(raised);
-                        loadAmountRaised();
-
-
-
-                        table.append(row);
-                    }
-
-                    addTokenDiv();
+                    addTokenDiv(table, res, res2, t);
                 }
-
-
-
             })
         })
     }
@@ -1419,7 +1415,7 @@
         console.log("LAUNCHING", supply, name, symbol, price + 'e18', sale_type, "0");
 
         //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, uint _whitelist
-        LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, "0",
+        LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, 0,
             {gas: 6000000, from: web3.eth.defaultAccount}, function(err, res){
             console.log("LAUNCHED TOKEN:",err || res);
 

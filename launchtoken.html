@@ -22,7 +22,7 @@
 <select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
 <small><a id="contract_link" target="_blank"></a></small>
 
-<div style="float:right">
+<div style="float:right; display:none" id="launcher_div">
     launcher:
     <input id="launcher" /><button onclick="upgradeLauncher()">upgrade</button>
 </div>
@@ -67,13 +67,13 @@
 </div>
 
 <script>
-    var launchtoken_address = "0xcf5261e5e96d3ad6efd2ea984cb9d78112a4f566";
+    var launchtoken_address = "0xa68f0d8b9c47c0cf1126fbf3c67626a5960586ee";
     var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
-        launchtoken_address = "0xaba488d7444345022c3e61d4f243aa9df66fb7e2";
+        launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");
@@ -277,6 +277,20 @@
                 {
                     "name": "",
                     "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
                 }
             ],
             "payable": false,
@@ -1204,6 +1218,12 @@
         //loadBalance();
         listTokens();
 
+        LaunchToken.owner.call(function(err, res){
+            console.log("OWNER OF LAUNCHTOKEN", res);
+            if(res == web3.eth.defaultAccount){
+                document.getElementById("launcher_div").style.display = "block";
+            }
+        })
 
 
         LaunchToken.listTokens.call(function(err,res){

@@ -8,10 +8,13 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/launchtoken.html');
 });
 
+app.get('/ico', function (req, res) {
+    res.sendFile(__dirname + '/example_ico.html');
+});
+
 app.get('/node_modules/web3/dist/web3.min.js', function (req, res) {
     res.sendFile(__dirname + '/node_modules/web3/dist/web3.min.js');
 });
-
 
 //app.use("/", express.static(__dirname + '/public'));
 

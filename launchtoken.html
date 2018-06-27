@@ -29,7 +29,7 @@
 <hr />
 <h1>your tokens</h1>
 <table id="tokens" class="table">
-    <th>symbol</th><th>address</th><th>crowdsale</th>
+    <th>symbol</th><th>address</th><th>crowdsale</th><th>status</th>
 </table>
 
 <hr />
@@ -38,33 +38,27 @@
 <table>
     <tr>
         <td>Type</td>
-        <td><select style="width:100%"><option value="1">Flat Price</option></select></td>
-        <td></td>
+        <td><select style="width:100%" id="sale_type"><option value="1">Flat Price</option></select></td>
     </tr>
     <tr>
         <td>Symbol:</td>
         <td><input id="symbol" type="text" placeholder="SYM" /></td>
-        <td></td>
     </tr>
     <tr>
         <td>Name:</td>
         <td><input id="name" type="text" placeholder="TokenName" /></td>
-        <td></td>
     </tr>
     <tr>
         <td>Supply:</td>
         <td><input id="supply" type="number" value="1000000000" /></td>
-        <td></td>
     </tr>
     <tr>
         <td>Price:</td>
-        <td><input id="price" type="number" value="0.25" /></td>
-        <td>ETH</td>
+        <td><input id="price" type="number" value="0.25" /><span style="color:lightgray; margin-left:-40px;">ETH</span></td>
     </tr>
     <tr>
         <td></td>
         <td><button style="float:right" class="pull-right" onclick="launchToken()">launch</button></td>
-        <td></td>
     </tr>
 </table>
 
@@ -72,13 +66,13 @@
 </div>
 
 <script>
-    var launchtoken_address = "0x832d016650035d2021a5e062f697c36649764e80";
+    var launchtoken_address = "0x1b1d899b71b5e0c9af394ed4cf6c87ac5c0d7c29";
     var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
-        launchtoken_address = '0xddb8587dbabd3da5c3cd53241f54cd42e750f746';
+        launchtoken_address = '0x89c1812b17295d7a6fcebf7cbf0353a26a9d24f8';
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");
@@ -90,145 +84,31 @@
 
     var launchTokenAbi = [
         {
-            "constant": true,
+            "anonymous": false,
             "inputs": [
                 {
-                    "name": "_owner",
-                    "type": "address"
-                }
-            ],
-            "name": "listTokensForAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
+                    "indexed": false,
+                    "name": "owner",
                     "type": "address"
                 },
                 {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "ownersTokens",
-            "outputs": [
-                {
-                    "name": "",
+                    "indexed": false,
+                    "name": "token",
                     "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
+                },
                 {
-                    "name": "_owner",
+                    "indexed": false,
+                    "name": "crowdsale",
                     "type": "address"
-                }
-            ],
-            "name": "listCrowdsalesForAddress",
-            "outputs": [
+                },
                 {
-                    "name": "",
-                    "type": "address[]"
+                    "indexed": false,
+                    "name": "symbol",
+                    "type": "string"
                 }
             ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_launcher",
-                    "type": "address"
-                }
-            ],
-            "name": "upgradeLauncher",
-            "outputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "tokens",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "listCrowdsales",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "listTokens",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "crowdsaleOwners",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
+            "name": "TokenLaunched",
+            "type": "event"
         },
         {
             "constant": false,
@@ -265,9 +145,179 @@
             "type": "function"
         },
         {
+            "inputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "_launcher",
+                    "type": "address"
+                }
+            ],
+            "name": "upgradeLauncher",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "crowdsaleOwners",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "crowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
             "constant": true,
             "inputs": [],
             "name": "getTokenLauncher",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listCrowdsalesForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "listTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
+            "name": "listTokensForAddress",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersCrowdsales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersTokens",
             "outputs": [
                 {
                     "name": "",
@@ -305,7 +355,7 @@
                     "type": "uint256"
                 }
             ],
-            "name": "crowdsales",
+            "name": "tokens",
             "outputs": [
                 {
                     "name": "",
@@ -315,62 +365,6 @@
             "payable": false,
             "stateMutability": "view",
             "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                },
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "ownersCrowdsales",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "constructor"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": false,
-                    "name": "owner",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "token",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "crowdsale",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "symbol",
-                    "type": "string"
-                }
-            ],
-            "name": "TokenLaunched",
-            "type": "event"
         }
     ];
     var erc20Abi = [
@@ -847,6 +841,303 @@
             "type": "event"
         }
     ];
+    var crowdsaleAbi = [
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "initialBalance",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "started",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "withdraw",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "startingBalance",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [
+                {
+                    "name": "user",
+                    "type": "address"
+                }
+            ],
+            "name": "whitelist",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "price",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "start",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "finished",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "withdrawn",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "currentBalance",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": false,
+            "inputs": [],
+            "name": "finish",
+            "outputs": [],
+            "payable": false,
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "name": "whitelisted",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "useWhitelist",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "token",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "payable": true,
+            "stateMutability": "payable",
+            "type": "fallback"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "starter",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "initialBalance",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Started",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "finisher",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "initialBalance",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "name": "availableBalance",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Finished",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "withdrawer",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Withdrawn",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "user",
+                    "type": "address"
+                }
+            ],
+            "name": "Whitelisted",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "user",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "deposit",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "name": "gained",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Deposited",
+            "type": "event"
+        }
+    ];
 
     var LaunchToken = null;
     var TokenLauncher = null;
@@ -890,10 +1181,7 @@
             console.log("TOKEN", err || res)
         })
 
-        var launchedEvent = LaunchToken.TokenLaunched();
-        launchedEvent.watch(launchedCallback);
-
-
+        LaunchToken.TokenLaunched().watch(launchedCallback);
     }
 
     function launchedCallback(err, res){
@@ -946,26 +1234,90 @@
                     function addTokenDiv() {
                         var row = document.createElement('tr');
 
+                        var token_address = res[t];
+                        var crowdsale_address = res2[t];
+
                         var symbol = document.createElement('td');
-                        symbol.id = res[t];
+                        symbol.id = token_address;
                         row.appendChild(symbol);
 
-                        var address = document.createElement("td")
-                        address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + res[t] + "'>" + res[t] + "</a></small>";
+                        var address = document.createElement("td");
+                        address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + token_address + "'>" + token_address + "</a></small>";
                         row.appendChild(address);
 
-                        var address2 = document.createElement("td")
-                        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + res2[t] + "'>" + res2[t] + "</a></small>";
+                        var address2 = document.createElement("td");
+                        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + crowdsale_address + "'>" + crowdsale_address + "</a></small>";
                         row.appendChild(address2);
 
-                        var erc20 = web3.eth.contract(erc20Abi).at(res[t]);
+                        var erc20 = web3.eth.contract(erc20Abi).at(token_address);
                         erc20.symbol.call(function (err, res) {
                             symbol.innerHTML = res;
-                        })
+                        });
 
-                        erc20.balanceOf.call(res2[t], function(err,res){
+                        erc20.balanceOf.call(crowdsale_address, function(err,res){
                             console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
-                        })
+                        });
+
+                        var status = document.createElement("td");
+                        status.id = crowdsale_address;
+
+                        var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+
+                        crowdsale.Started().watch(loadCrowdsaleStatus);
+                        crowdsale.Finished().watch(loadCrowdsaleStatus);
+                        crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
+
+                        function loadCrowdsaleStatus() {
+                            hideSpinner();
+                            crowdsale.withdrawn.call(function (err, withdrawn) {
+                            crowdsale.started.call(function (err, started) {
+                                crowdsale.finished.call(function (err, finished) {
+                                    var stat = document.createElement("span");
+                                    var btn = document.createElement("button");
+                                    if (started && !finished) {
+                                        stat.innerHTML = "started";
+                                        btn.innerHTML = "finish";
+                                        btn.onclick = function () {
+                                            crowdsale.finish(function (err, res) {
+                                                showSpinner();
+                                            })
+                                        }
+                                    } else if (finished) {
+                                        if(!withdrawn) {
+                                            btn.innerHTML = "withdraw";
+                                            btn.onclick = function () {
+                                                crowdsale.withdraw(function (err, res) {
+                                                    showSpinner();
+                                                })
+                                            }
+                                            stat.innerHTML = "finished";
+                                        }else{
+                                            stat.innerHTML = "completed"
+                                        }
+                                    } else {
+                                        stat.innerHTML = "new";
+                                        btn.innerHTML = "start";
+                                        btn.onclick = function () {
+                                            crowdsale.start(function (err, res) {
+                                                showSpinner();
+                                            })
+                                        }
+                                    }
+
+                                    status.innerHTML = "";
+                                    status.appendChild(stat);
+                                    if(btn.innerHTML) status.appendChild(btn);
+                                })
+                            })
+                            });
+
+                        }
+
+
+
+                        row.append(status);
+
+                        loadCrowdsaleStatus();
 
                         table.append(row);
                     }
@@ -996,9 +1348,16 @@
         var supply = $('#supply').val();
         var sale_type = $('#sale_type').val();
 
+        if(!name || !symbol || !supply || !price){
+            alert("please enter Symbol, Name, Price, and Supply");
+            return;
+        }
+
         console.log("launching", symbol);
 
         console.log("as,", web3.eth.defaultAccount);
+
+        console.log(supply, name, symbol, price + 'e18', sale_type, "0");
 
         //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, uint _whitelist
         LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, "0",

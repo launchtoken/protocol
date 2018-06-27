@@ -208,13 +208,23 @@ contract TokenERC20 {
 }
 
 contract ConstantPriceCrowdsale{
-    address token;
-    address owner;
-    uint price;
-    bool finished = false;
-    bool useWhitelist = false;
+    address public token;
+    address public owner;
+    uint public price;
+    bool public finished = false;
+    bool public started = false;
+    bool public withdrawn = false;
+    uint public initialBalance;
 
-    mapping(address => bool) whitelisted;
+    bool public useWhitelist = false;
+
+    mapping(address => bool) public whitelisted;
+
+    event Started(address starter, uint initialBalance);
+    event Finished(address finisher, uint initialBalance, uint availableBalance);
+    event Withdrawn(address withdrawer, uint amount);
+    event Whitelisted(address user);
+    event Deposited(address user, uint deposit, uint gained);
 
     constructor(address _token, address _owner, uint _price, bool _whitelist) public {
         token = _token;
@@ -223,11 +233,22 @@ contract ConstantPriceCrowdsale{
         useWhitelist = _whitelist;
     }
 
-    bool started = false;
-
     function finish() public {
         assert(started);
+        assert(msg.sender == owner);
         finished = true;
+
+        emit Finished(msg.sender, initialBalance, currentBalance());
+    }
+
+    function start() public {
+        assert(!started && !finished);
+        assert(msg.sender == owner);
+        started = true;
+
+        initialBalance =  ERC20(token).balanceOf(this);
+
+        emit Started(msg.sender, initialBalance);
     }
 
     function() public payable {
@@ -244,35 +265,70 @@ contract ConstantPriceCrowdsale{
         assert(amount <= remaining);
 
         tok.transfer(msg.sender, amount);
+
+        Deposited(msg.sender, msg.value, amount);
     }
 
     function withdraw() public {
         assert(msg.sender == owner);
         assert(finished);
 
-        msg.sender.transfer(this.balance);
+        uint bal = this.balance;
+        msg.sender.transfer(bal);
+
+        withdrawn = true;
+
+        emit Withdrawn(msg.sender, bal);
     }
 
     function whitelist(address user) public {
         assert(msg.sender == owner);
 
         whitelisted[user] = true;
+
+        emit Whitelisted(user);
     }
 
-    function take(address token, uint amount) public {
-        ERC20(token).transferFrom(msg.sender, this, amount);
+    function currentBalance() public view returns(uint) {
+        return ERC20(token).balanceOf(this);
     }
 
-    function setInfo(address _token, address _owner){
-        require(msg.sender == owner);
-        token = _token;
-        owner = _owner;
+    function startingBalance() public view returns(uint) {
+        if(started){
+            return initialBalance;
+        }else{
+            return ERC20(token).balanceOf(this);
+        }
     }
+
 }
 
 contract Crowdsale {
-    function take(address token, uint amount) public;
-    function setInfo(address token, address owner) public;
+    address public token;
+    address public owner;
+    uint public price;
+    bool public finished;
+    bool public started;
+    bool public withdrawn;
+    uint public initialBalance;
+
+    bool public useWhitelist;
+
+    mapping(address => bool) public whitelisted;
+
+    event Started(address starter, uint initialBalance);
+    event Finished(address finisher, uint initialBalance, uint availableBalance);
+    event Withdrawn(address withdrawer, uint amount);
+    event Whitelisted(address user);
+    event Deposited(address user, uint deposit, uint gained);
+
+    function finish() public;
+    function start() public;
+    function() public payable;
+    function withdraw() public;
+    function whitelist(address user) public;
+    function currentBalance() public view returns(uint);
+    function startingBalance() public view returns(uint);
 }
 
 contract TokenLauncher {

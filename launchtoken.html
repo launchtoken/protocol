@@ -29,7 +29,7 @@
 <hr />
 <h1>your tokens</h1>
 <table id="tokens" class="table">
-    <th>symbol</th><th>address</th><th>crowdsale</th><th>status</th>
+    <th>symbol</th><th>address</th><th>crowdsale</th><th>status</th><th>raised</th>
 </table>
 
 <hr />
@@ -66,7 +66,7 @@
 </div>
 
 <script>
-    var launchtoken_address = "0x1b1d899b71b5e0c9af394ed4cf6c87ac5c0d7c29";
+    var launchtoken_address = "0xcf5261e5e96d3ad6efd2ea984cb9d78112a4f566";
     var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
     if (typeof web3 !== 'undefined') {
@@ -79,7 +79,7 @@
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
     }
 
-    var za =               "0x0000000000000000000000000000000000000000";
+    var za = "0x0000000000000000000000000000000000000000";
 
 
     var launchTokenAbi = [
@@ -882,6 +882,20 @@
         {
             "constant": true,
             "inputs": [],
+            "name": "getAmountRaised",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
             "name": "owner",
             "outputs": [
                 {
@@ -1022,6 +1036,20 @@
                 {
                     "name": "",
                     "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "raised",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
                 }
             ],
             "payable": false,
@@ -1266,58 +1294,68 @@
                         crowdsale.Started().watch(loadCrowdsaleStatus);
                         crowdsale.Finished().watch(loadCrowdsaleStatus);
                         crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
+                        crowdsale.Deposited().watch(loadAmountRaised);
 
                         function loadCrowdsaleStatus() {
                             hideSpinner();
                             crowdsale.withdrawn.call(function (err, withdrawn) {
                             crowdsale.started.call(function (err, started) {
-                                crowdsale.finished.call(function (err, finished) {
-                                    var stat = document.createElement("span");
-                                    var btn = document.createElement("button");
-                                    if (started && !finished) {
-                                        stat.innerHTML = "started";
-                                        btn.innerHTML = "finish";
-                                        btn.onclick = function () {
-                                            crowdsale.finish(function (err, res) {
-                                                showSpinner();
-                                            })
-                                        }
-                                    } else if (finished) {
-                                        if(!withdrawn) {
-                                            btn.innerHTML = "withdraw";
-                                            btn.onclick = function () {
-                                                crowdsale.withdraw(function (err, res) {
-                                                    showSpinner();
-                                                })
-                                            }
-                                            stat.innerHTML = "finished";
-                                        }else{
-                                            stat.innerHTML = "completed"
-                                        }
-                                    } else {
-                                        stat.innerHTML = "new";
-                                        btn.innerHTML = "start";
-                                        btn.onclick = function () {
-                                            crowdsale.start(function (err, res) {
-                                                showSpinner();
-                                            })
-                                        }
+                            crowdsale.finished.call(function (err, finished) {
+                                var stat = document.createElement("span");
+                                var btn = document.createElement("button");
+                                if (started && !finished) {
+                                    stat.innerHTML = "started";
+                                    btn.innerHTML = "finish";
+                                    btn.onclick = function () {
+                                        crowdsale.finish(function (err, res) {
+                                            showSpinner();
+                                        })
                                     }
+                                } else if (finished) {
+                                    if(!withdrawn) {
+                                        btn.innerHTML = "withdraw";
+                                        btn.onclick = function () {
+                                            crowdsale.withdraw(function (err, res) {
+                                                showSpinner();
+                                            })
+                                        }
+                                        stat.innerHTML = "finished";
+                                    }else{
+                                        stat.innerHTML = "completed"
+                                    }
+                                } else {
+                                    stat.innerHTML = "new";
+                                    btn.innerHTML = "start";
+                                    btn.onclick = function () {
+                                        crowdsale.start(function (err, res) {
+                                            showSpinner();
+                                        })
+                                    }
+                                }
 
-                                    status.innerHTML = "";
-                                    status.appendChild(stat);
-                                    if(btn.innerHTML) status.appendChild(btn);
-                                })
-                            })
+                                status.innerHTML = "";
+                                status.appendChild(stat);
+                                if(btn.innerHTML) status.appendChild(btn);
+                            });
+                            });
                             });
 
                         }
-
-
-
                         row.append(status);
-
                         loadCrowdsaleStatus();
+
+
+                        var raised = document.createElement("td");
+                        raised.style.textAlign = "right";
+                        function loadAmountRaised() {
+                            crowdsale.getAmountRaised.call(function (err, res) {
+                                raised.innerHTML = res / 1e18;
+                            })
+                        }
+                        row.append(raised);
+                        loadAmountRaised();
+
+
 
                         table.append(row);
                     }
@@ -1357,7 +1395,7 @@
 
         console.log("as,", web3.eth.defaultAccount);
 
-        console.log(supply, name, symbol, price + 'e18', sale_type, "0");
+        console.log("LAUNCHING", supply, name, symbol, price + 'e18', sale_type, "0");
 
         //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, uint _whitelist
         LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, "0",

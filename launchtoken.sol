@@ -214,6 +214,7 @@ contract ConstantPriceCrowdsale{
     bool public finished = false;
     bool public started = false;
     bool public withdrawn = false;
+    uint public raised = 0;
     uint public initialBalance;
 
     bool public useWhitelist = false;
@@ -277,6 +278,7 @@ contract ConstantPriceCrowdsale{
         msg.sender.transfer(bal);
 
         withdrawn = true;
+        raised = bal;
 
         emit Withdrawn(msg.sender, bal);
     }
@@ -301,6 +303,14 @@ contract ConstantPriceCrowdsale{
         }
     }
 
+    function getAmountRaised() public view returns(uint){
+        if(withdrawn){
+            return raised;
+        }else{
+            return this.balance;
+        }
+    }
+
 }
 
 contract Crowdsale {
@@ -310,6 +320,7 @@ contract Crowdsale {
     bool public finished;
     bool public started;
     bool public withdrawn;
+    uint public raised;
     uint public initialBalance;
 
     bool public useWhitelist;
@@ -329,6 +340,7 @@ contract Crowdsale {
     function whitelist(address user) public;
     function currentBalance() public view returns(uint);
     function startingBalance() public view returns(uint);
+    function getAmountRaised() public view returns(uint);
 }
 
 contract TokenLauncher {

@@ -5,9 +5,9 @@
     <script src="./node_modules/web3/dist/web3.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 </head>
-<body style="background-color:lightblue">
+<body style="background: linear-gradient(to bottom right, lightblue, aquamarine); ">
 
-<div style="max-width:800px; margin-left:auto; margin-right:auto; background: white; padding:15px; margin-top:20px;">
+<div style="max-width:800px; margin-left:auto; margin-right:auto; background: rgba(255,255,255,0.7); padding:15px; margin-top:20px;">
     <center>
         <h1>Amount Raised <span id="amount-raised"></span></h1>
 
@@ -17,9 +17,11 @@
             <input placeholder="0" id="amount-to-buy" /><span style="margin-left:-40px; color:lightgray;">ETH</span>
             &nbsp;<button id="buy-button">contribute</button>
             <br />
-            BUY
-            <span id="token-amount"></span> <span id="token-symbol"></span>
-            @ <span id="token-price"></span> ETH
+            <small>
+                BUY
+                <span id="token-amount"></span> <span id="token-symbol"></span>
+                @ <span id="token-price"></span> ETH
+            </small>
 
         </div>
 

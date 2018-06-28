@@ -7,8 +7,8 @@
 </head>
 <body style="background: linear-gradient(to bottom right, lightblue, aquamarine); ">
 
-<div style="max-width:800px; margin-left:auto; margin-right:auto; background: rgba(255,255,255,0.7); padding:15px; margin-top:20px;">
-    <center>
+<div style="max-width:800px; position:relative; margin-left:auto; margin-right:auto; background: rgba(255,255,255,0.7); padding:15px; margin-top:20px;">
+    <center class="token-sale-ui">
         <h1>Amount Raised: <span id="amount-raised"></span></h1>
 
         <hr />
@@ -26,20 +26,26 @@
 
         </div>
 
-        <hr />
-
-        <div>
-            <small>
-                your balance:
-                <span id="user-balance"></span>
-            </small>
-        </div>
-
     </center>
+
+    <div id="token-sale-status" style="position:absolute; left:0; right:0; top:0; bottom:0; background:rgba(0,0,0,0.5);">
+        <div id="token-sale-status-text" style="color:white; font-size:30px; padding-top:64px;  text-align: center; vertical-align: middle;">
+
+        </div>
+    </div>
 </div>
+<center class="token-sale-ui">
+    <br />
+    <div>
+        <small>
+            your balance:
+            <span id="user-balance"></span>
+        </small>
+    </div>
+</center>
 
 <script>
-    var crowdsale_address = '0xe21a9886fe6d3df7cdff2081660e4457e6b731f3';
+    var crowdsale_address = '0x8a1a3fad06c328c6d5400d2fd2c815458424e060';
 
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
@@ -52,6 +58,17 @@
     }
 
     function startApp(crowdsale_address){
+        this.saleFinishedText = "Sale FInished";
+        this.saleNotStartedText = "Sale Not Started"
+
+        function setUiState(state, text){
+            $("#token-sale-status")[state ? 'hide' : 'show']()
+            $("#token-sale-status-text").html(text);
+            $('.token-sale-ui *').prop("disabled", !state);
+        }
+
+        setUiState(false);
+
         var crowdsaleAbi = [
             {
                 "constant": true,
@@ -639,6 +656,20 @@
             })
         })
 
+        crowdsale.started.call(function(err, started){
+            crowdsale.finished.call(function(err, finished){
+                if(started && !finished) {
+                    setUiState(true)
+                }else{
+                    if(finished){
+                        setUiState(false, this.saleFinishedText)
+                    }else if(!started){
+                        setUiState(false, this.saleNotStartedText)
+                    }
+                }
+            })
+        })
+
         crowdsale.price.call(function(err, sale_price) {
             price = sale_price;
             console.log("price", price.toNumber())
@@ -660,6 +691,9 @@
 
 
         $("#amount-to-buy").on("keyup", calculateAmountBought);
+
+        crowdsale.Started().watch(function(){  setUiState(true); })
+        crowdsale.Finished().watch(function(){  setUiState(false, "Sale Finished"); })
 
         crowdsale.Deposited().watch(function(err, res){
             loadAmountRaised();

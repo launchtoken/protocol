@@ -51,6 +51,11 @@
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
         crowdsale_address = "0xcab846822e6f5de6459b38a6fb5248030c48f8f6";
+
+        if(window.location.hash){
+            crowdsale_address = window.location.hash.substr(1);
+        }
+
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");

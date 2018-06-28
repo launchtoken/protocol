@@ -26,11 +26,20 @@
 
         </div>
 
+        <hr />
+
+        <div>
+            <small>
+                your balance:
+                <span id="user-balance"></span>
+            </small>
+        </div>
+
     </center>
 </div>
 
 <script>
-    var crowdsale_address = '0x1f7127aa3ef43dcb48ffb5dd887fa8820a65e2fa';
+    var crowdsale_address = '0xe21a9886fe6d3df7cdff2081660e4457e6b731f3';
 
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
@@ -610,6 +619,8 @@
             $('#token-amount').html( (ethAmount / price) * 1e18);
         }
 
+        var loadUserBalance = null;
+
         crowdsale.token.call(function(err, tok_address){
             token_address = tok_address;
             var token = web3.eth.contract(erc20Abi).at(token_address);
@@ -617,12 +628,20 @@
 
             token.symbol.call(function(err, symbol){
                 $('#token-symbol').html(symbol);
+
+                loadUserBalance = function(){
+                    token.balanceOf.call(web3.eth.defaultAccount, function(err, balance){
+                        $('#user-balance').html((balance / 1e18) + " " + symbol);
+                    })
+                }
+
+                loadUserBalance();
             })
         })
 
         crowdsale.price.call(function(err, sale_price) {
             price = sale_price;
-            console.log("price", price)
+            console.log("price", price.toNumber())
             $("#token-price").html(price.div(1e18).toString());
             calculateAmountBought();
         })
@@ -638,9 +657,19 @@
             })
         }
 
+
+
         $("#amount-to-buy").on("keyup", calculateAmountBought);
 
-        crowdsale.Deposited().watch(loadAmountRaised);
+        crowdsale.Deposited().watch(function(err, res){
+            loadAmountRaised();
+
+            if(res.args.user == web3.eth.defaultAccount && loadUserBalance) {
+                loadUserBalance();
+                //console.log("ETH DEPOSITED", err || res)
+            }
+        });
+
         loadAmountRaised();
 
         function buyTokens(){

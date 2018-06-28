@@ -261,13 +261,14 @@ contract ConstantPriceCrowdsale{
         ERC20 tok = ERC20(token);
         uint remaining = tok.balanceOf(this);
 
-        uint amount = msg.value / price;
+        uint decimals = uint(tok.decimals());
+        uint amount = (msg.value / price) * 10 ** decimals;
 
         assert(amount <= remaining);
 
         tok.transfer(msg.sender, amount);
 
-        Deposited(msg.sender, msg.value, amount);
+        emit Deposited(msg.sender, msg.value, amount);
     }
 
     function withdraw() public {
@@ -412,7 +413,7 @@ contract LaunchToken {
 
     TokenLauncherInterface tokenLauncher;
 
-    address owner;
+    address public owner;
 
     address[] public tokens;
     address[] public crowdsales;

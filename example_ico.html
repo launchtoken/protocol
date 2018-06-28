@@ -14,8 +14,10 @@
         <hr />
 
         <div>
-            <input placeholder="0" id="amount-to-buy" /><span style="margin-left:-35px; color:lightgray;">ETH</span><button id="buy-button">buy</button>
+            <input placeholder="0" id="amount-to-buy" /><span style="margin-left:-40px; color:lightgray;">ETH</span>
+            &nbsp;<button id="buy-button">contribute</button>
             <br />
+            BUY
             <span id="token-amount"></span> <span id="token-symbol"></span>
             @ <span id="token-price"></span> ETH
 
@@ -25,10 +27,12 @@
 </div>
 
 <script>
+    var crowdsale_address = '0x1f7127aa3ef43dcb48ffb5dd887fa8820a65e2fa';
+
     if (typeof web3 !== 'undefined') {
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
-        launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
+        crowdsale_address = "0xc8eae65db1b597f3ee3886fb494f127d13ed1446";
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");
@@ -657,7 +661,7 @@
     }
 
     setTimeout(function(){
-        startApp('0xc8eae65db1b597f3ee3886fb494f127d13ed1446');
+        startApp(crowdsale_address);
     }, 500);
 </script>
 

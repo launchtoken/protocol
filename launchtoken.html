@@ -30,7 +30,7 @@
 <hr />
 <h1>your tokens</h1>
 <table id="tokens" class="table">
-    <th>symbol</th><th>address</th><th>crowdsale</th><th>status</th><th>raised</th>
+    <th>symbol</th><th>address</th><th>crowdsale</th><th>status</th><th></th><th style="text-align: right">raised</th>
 </table>
 
 <hr />
@@ -1290,6 +1290,7 @@
         });
 
         var status = document.createElement("td");
+        var action = document.createElement("td");
         status.id = crowdsale_address;
 
         var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
@@ -1305,7 +1306,9 @@
             crowdsale.started.call(function (err, started) {
             crowdsale.finished.call(function (err, finished) {
                 var stat = document.createElement("span");
+                //stat.style.fontSize = '80%';
                 var btn = document.createElement("button");
+                //btn.style.fontSize = '80%';
                 if (started && !finished) {
                     stat.innerHTML = "started";
                     btn.innerHTML = "finish";
@@ -1338,13 +1341,15 @@
 
                 status.innerHTML = "";
                 status.appendChild(stat);
-                if(btn.innerHTML) status.appendChild(btn);
+                action.innerHTML = "";
+                if(btn.innerHTML) action.appendChild(btn);
             });
             });
             });
 
         }
         row.append(status);
+        row.append(action);
         loadCrowdsaleStatus();
 
 

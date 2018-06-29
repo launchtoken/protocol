@@ -4,6 +4,18 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" type="text/css" />
     <script src="./node_modules/web3/dist/web3.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <style>
+        #spinner {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top:0;
+            left:0;
+            background: rgba(0,0,0,.5) url(https://loading.io/spinners/double-ring/lg.double-ring-spinner.gif) center center no-repeat;
+            opacity: .5;
+            display:none;
+        }
+    </style>
 </head>
 <body style="background: linear-gradient(to bottom right, lightblue, aquamarine); ">
 
@@ -46,6 +58,8 @@
     </div>
 </div>
 
+<div id="spinner"></div>
+
 <script>
     var crowdsale_address = '0x8a1a3fad06c328c6d5400d2fd2c815458424e060';
 
@@ -53,18 +67,17 @@
         console.log("USING INJECTED WEB3");
         web3 = new Web3(web3.currentProvider);
         crowdsale_address = "0xe38a248df4ce7a56231504222ceeea1cdb56ffd4";
-
-        if(window.location.hash){
-            crowdsale_address = window.location.hash.substr(1);
-        }
-
     } else {
         // set the provider you want from Web3.providers
         console.log("USING LOCAL WEB3");
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
     }
 
-    function startApp(crowdsale_address){
+    if(window.location.hash){
+        crowdsale_address = window.location.hash.substr(1);
+    }
+
+    function LaunchToken(crowdsale_address){
         this.saleFinishedText = "Sale FInished";
         this.saleNotStartedText = "Sale Not Started"
 
@@ -701,13 +714,13 @@
 
         crowdsale.Started().watch(function(){  setUiState(true); })
         crowdsale.Finished().watch(function(){  setUiState(false, "Sale Finished"); })
-
         crowdsale.Deposited().watch(function(err, res){
             loadAmountRaised();
 
             if(res.args.user == web3.eth.defaultAccount && loadUserBalance) {
                 loadUserBalance();
-                //console.log("ETH DEPOSITED", err || res)
+                hideSpinner();
+                console.log("ETH DEPOSITED", err || res)
             }
         });
 
@@ -723,18 +736,24 @@
             }, function(err, res){
                 console.log(err || res)
                 if(!err){
-                    $('#amount-to-buy').val('')
+                    $('#amount-to-buy').val('');
                     calculateAmountBought();
+                    showSpinner();
                 }
             })
 
         }
 
+        function setSpinnerDisplay(display){document.getElementById("spinner").style.display = display;}
+        function showSpinner(){setSpinnerDisplay('block');}
+        function hideSpinner(){setSpinnerDisplay('none');}
+
+
         $('#buy-button').on("click", buyTokens);
     }
 
     setTimeout(function(){
-        startApp(crowdsale_address);
+        LaunchToken(crowdsale_address);
     }, 500);
 </script>
 

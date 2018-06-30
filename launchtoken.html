@@ -19,12 +19,12 @@
 </head>
 <body style="padding:10">
 
-<select id="account" onchange="selectAccount(event)"></select><span id="balance"></span>
+<select id="account" onchange="window.dashboard.selectAccount(event)"></select><span id="balance"></span>
 <small><a id="contract_link" target="_blank"></a></small>
 
 <div style="float:right; display:none" id="launcher_div">
     launcher:
-    <input id="launcher" /><button onclick="upgradeLauncher()">upgrade</button>
+    <input id="launcher" /><button onclick="window.dashboard.upgradeLauncher()">upgrade</button>
 </div>
 
 <hr />
@@ -59,28 +59,29 @@
     </tr>
     <tr>
         <td></td>
-        <td><button style="float:right" class="pull-right" onclick="launchToken()">launch</button></td>
+        <td><button style="float:right" class="pull-right" onclick="window.dashboard.launchToken()">launch</button></td>
     </tr>
 </table>
 
 <div id="spinner"></div>
 
 <script>
-    var launchtoken_address = "0xf9f12a4a2ddde5ee3e66efecfe3e656241ac5797";
-    var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
+var launchtoken_address = "0xf9f12a4a2ddde5ee3e66efecfe3e656241ac5797";
+var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
-    if (typeof web3 !== 'undefined') {
-        console.log("USING INJECTED WEB3");
-        web3 = new Web3(web3.currentProvider);
-        launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
-    } else {
-        // set the provider you want from Web3.providers
-        console.log("USING LOCAL WEB3");
-        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    }
+if (typeof web3 !== 'undefined') {
+    console.log("USING INJECTED WEB3");
+    web3 = new Web3(web3.currentProvider);
+    launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
+} else {
+    // set the provider you want from Web3.providers
+    console.log("USING LOCAL WEB3");
+    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+}
 
-    var za = "0x0000000000000000000000000000000000000000";
+var za = "0x0000000000000000000000000000000000000000";
 
+function LaunchTokenDashboard(){
 
     var launchTokenAbi = [
         {
@@ -1245,6 +1246,8 @@
         loadBalance();
     }
 
+    this.selectAccount = selectAccount;
+
     function loadBalance(){
         LaunchToken.balanceOf(web3.eth.defaultAccount, function(err, res){
             console.log(res);
@@ -1357,7 +1360,7 @@
         raised.style.textAlign = "right";
         function loadAmountRaised() {
             crowdsale.getAmountRaised.call(function (err, res) {
-                raised.innerHTML = res / 1e18;
+                raised.innerHTML = (res / 1e18) //+ " <small>ETH</small>";
             })
         }
         row.append(raised);
@@ -1399,6 +1402,7 @@
         })
     }
 
+    this.upgradeLauncher = upgradeLauncher;
 
     function launchToken(){
         var symbol = $("#symbol").val();
@@ -1427,6 +1431,8 @@
         })
     }
 
+    this.launchToken = launchToken;
+
     function setSpinnerDisplay(display){
         document.getElementById("spinner").style.display = display;
     }
@@ -1438,9 +1444,13 @@
         setSpinnerDisplay('none');
     }
 
+    startApp();
+}
 
 
-    setTimeout(startApp, 500);
+setTimeout(function(){
+    window.dashboard = new LaunchTokenDashboard();
+}, 500);
 </script>
 </body>
 </html>

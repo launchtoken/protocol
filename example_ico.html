@@ -67,11 +67,15 @@
 
 <script>
 var crowdsale_address = '0x8a1a3fad06c328c6d5400d2fd2c815458424e060';
+var kyc_registry_address = '0x3e78bfbd336845f18912edaae026fca163e5e0d6';
+var KYCEndpoint = 'http://localhost:1337/kyc';
 
 if (typeof web3 !== 'undefined') {
     console.log("USING INJECTED WEB3");
     web3 = new Web3(web3.currentProvider);
-    crowdsale_address = "0xe38a248df4ce7a56231504222ceeea1cdb56ffd4";
+    crowdsale_address = "0x342e13440fdf85b728f006ddea16e37e9ad896dc";
+    kyc_registry_address = '0xcf50f66798a066f5e0fe31e8aec299a6b097bb88';
+    KYCEndpoint = "kyc";
 } else {
     // set the provider you want from Web3.providers
     console.log("USING LOCAL WEB3");
@@ -88,8 +92,6 @@ function LaunchToken(crowdsale_address){
     this.saleNotStartedText = "Sale Not Started"
     var centerMiddleCss = "position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);";
     var overlayCss = 'position:absolute; left:0; top:0; right:0; bottom:0;';
-
-    var KYCEndpoint = 'http://localhost:1337/kyc';
 
     function setUiState(state, text){
         $("#token-sale-status")[state ? 'hide' : 'show']()
@@ -862,6 +864,14 @@ function LaunchToken(crowdsale_address){
         modal_body.style = "position:relative; width:100%; height:100%; padding:20px;";
         modal.appendChild(modal_body);
 
+        var closeButton = document.createElement('a');
+        closeButton.onclick = closeModal;
+        closeButton.innerHTML = '×';
+        closeButton.style.margin = "-20px -10px 0 0"
+        closeButton.style.fontSize = "20px";
+        closeButton.style.float = "right";
+        closeButton.style.cursor = "pointer";
+        modal_body.appendChild(closeButton);
 
         overlay.appendChild(modal);
         overlay.onclick = closeModal;
@@ -923,15 +933,6 @@ function LaunchToken(crowdsale_address){
         var InputField = modal.InputField;
 
         ////////////////////////////////////////////////////////
-        var closeButton = document.createElement('a');
-        closeButton.onclick = closeModal;
-        closeButton.innerHTML = '×';
-        closeButton.style.margin = "-20px -10px 0 0"
-        closeButton.style.fontSize = "20px";
-        closeButton.style.float = "right";
-        closeButton.style.cursor = "pointer";
-
-        modal.append(closeButton);
         modal.append(InputField("Name", "text"));
         modal.append(InputField("Address 1", "text"));
         modal.append(InputField("Address 2", "text"));
@@ -949,7 +950,8 @@ function LaunchToken(crowdsale_address){
 
         var submittedKYC = false;
 
-        var registry = web3.eth.contract(KYCRegistryAbi).at('0x3e78bfbd336845f18912edaae026fca163e5e0d6');
+        var registry = web3.eth.contract(KYCRegistryAbi).at(kyc_registry_address);
+        self.registry = registry;
         registry.Registered().watch(function(err, res) {
             console.log("REGISTERED", res)
             if(res.args.user == web3.eth.defaultAccount){
@@ -972,6 +974,7 @@ function LaunchToken(crowdsale_address){
             var url = KYCEndpoint + '?user=' + web3.eth.defaultAccount;
             submittedKYC = true;
             showSpinner();
+            console.log("SENDING REQUEST TO KYC SERVER")
             ajax(url, function(resp){
                 console.log("AJAX RESP", resp)
                 //kyctx.innerHTML = resp;
@@ -1005,8 +1008,8 @@ setTimeout(function(){
 }, 500);
 </script>
 
-<script src="http://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-<script src="http://threejs.org/examples/js/libs/stats.min.js"></script>
+<!--script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script src="https://threejs.org/examples/js/libs/stats.min.js"></script-->
 <script>
     var particle_js_config = {
         "particles": {

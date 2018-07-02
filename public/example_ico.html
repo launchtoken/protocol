@@ -2,7 +2,7 @@
 <head>
     <title>LaunchToken Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" type="text/css" />
-    <script src="./node_modules/web3/dist/web3.min.js"></script>
+    <script src="../node_modules/web3/dist/web3.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
 
     <style>
@@ -88,7 +88,7 @@ if(window.location.hash){
 
 function LaunchToken(crowdsale_address){
     var self = this;
-    this.saleFinishedText = "Sale FInished";
+    this.saleFinishedText = "Sale Finished";
     this.saleNotStartedText = "Sale Not Started"
     var centerMiddleCss = "position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);";
     var overlayCss = 'position:absolute; left:0; top:0; right:0; bottom:0;';
@@ -100,6 +100,11 @@ function LaunchToken(crowdsale_address){
     }
 
     setUiState(false);
+
+    /*if(!web3 || !web3.eth || !web3.eth.defaultAccount){
+        alert("Please log into Metamask, select ROPSTEN testnet network, and refresh the page");
+        return;
+    }*/
 
     var crowdsaleAbi = [
         {
@@ -739,6 +744,10 @@ function LaunchToken(crowdsale_address){
     console.log(web3.eth.defaultAccount);
 
     var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+    self.crowdsale = crowdsale;
+
+    var registry = web3.eth.contract(KYCRegistryAbi).at(kyc_registry_address);
+    self.registry = registry;
 
     var price = 0;
 
@@ -841,14 +850,18 @@ function LaunchToken(crowdsale_address){
     function showSpinner(){setSpinnerDisplay('block');}
     function hideSpinner(){setSpinnerDisplay('none');}
 
-    function ajax(url, cb){
+    function ajax(url, cb, data, type){
+        if(!type) type = "GET";
+
         var xhr = new XMLHttpRequest();
-        xhr.open('GET',url);
+        xhr.open(type,url);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onload = function() {
             if (xhr.status === 200)cb(xhr.responseText);
             else console.error(xhr.status);
         };
-        xhr.send();
+        if(!data) xhr.send();
+        else xhr.send(typeof data == "string" ? data : JSON.stringify(data));
     }
 
     function Modal(children){
@@ -906,6 +919,27 @@ function LaunchToken(crowdsale_address){
         this.append = this.appendChild = function(child){
             modal_body.appendChild(child);
         }
+
+        var modal_overlay = document.createElement('div');
+        modal_overlay.onclick = closeModal;
+        modal_overlay.style = overlayCss + "display:none;background-color:rgba(255,255,255,0.8);"
+        modal_overlay.show = function(){
+            modal_overlay.style.display = 'block';
+        }
+        modal_overlay.append = modal_overlay.appendChild;
+        modal.append(modal_overlay);
+
+        this.overlay = modal_overlay;
+
+        this.serialize = function(){
+            var result = {};
+            var inputs = modal_body.getElementsByTagName('input');
+            for(var i = 0; i<inputs.length; i++){
+                var input = inputs[i];
+                if(input.id) result[input.id] = input.value;
+            }
+            return result;
+        }
     }
 
     function getKYCInfo(){
@@ -944,25 +978,25 @@ function LaunchToken(crowdsale_address){
         preview.height = 220;
         modal.append(preview);
 
-        var modal_overlay = document.createElement('div');
-        modal_overlay.onclick = closeModal;
-        modal_overlay.style = overlayCss + "display:none;background-color:rgba(255,255,255,0.8);"
-
         var submittedKYC = false;
 
-        var registry = web3.eth.contract(KYCRegistryAbi).at(kyc_registry_address);
-        self.registry = registry;
+        function kycDone(tx){
+            //modal.overlay.show();
+            //modal.overlay.innerHTML = '<a href="' + etherscan_base_url + 'tx/' + tx  +'">' + tx + '</a>';
+        }
+
         registry.Registered().watch(function(err, res) {
             console.log("REGISTERED", res)
             if(res.args.user == web3.eth.defaultAccount){
                 hideSpinner();
                 if(submittedKYC) {
                     self.doneKYC = true;
-                    modal_overlay.style.display = 'block';
+
                     var checkbox = document.createElement('div');
                     checkbox.style = centerMiddleCss;
                     checkbox.innerHTML = '<center><div style="font-size:70px;"">&#x2705;</div>KYC<br />Approved</center>';
-                    modal_overlay.appendChild(checkbox);
+                    modal.overlay.append(checkbox);
+                    modal.overlay.show();
                 }
             }
         });
@@ -974,14 +1008,23 @@ function LaunchToken(crowdsale_address){
             var url = KYCEndpoint + '?user=' + web3.eth.defaultAccount;
             submittedKYC = true;
             showSpinner();
-            console.log("SENDING REQUEST TO KYC SERVER")
-            ajax(url, function(resp){
-                console.log("AJAX RESP", resp)
-                //kyctx.innerHTML = resp;
-            })
-        }));
+            console.log("SENDING REQUEST TO KYC ENDPOINT")
 
-        modal.append(modal_overlay);
+            var data = modal.serialize();
+            data.image_data = preview.src;
+
+            console.log(data);
+            //return;
+
+            //url += ("&" +  Object.keys(data).map(function(key){return key + "=" + data[key]}).join('&'))
+
+            ajax(url, function(resp){
+                console.log("AJAX RESP", resp);
+
+                kycDone(resp); //show overlay when KYC is done, wait for eth tx to finish
+                //kyctx.innerHTML = resp;
+            }, data, "POST")
+        }));
 
         ////////////////////////////////////////////////////////
 
@@ -993,11 +1036,15 @@ function LaunchToken(crowdsale_address){
     $('#buy-button').on("click", function(){
         console.log("NEED KYC?", self.needsKYC);
 
-        if(self.needsKYC && !self.doneKYC) {
-            getKYCInfo();
-        }else {
-            buyTokens();
-        }
+        registry.registry.call(web3.eth.defaultAccount, function(err, hash){
+            console.log("YOUR CURRENT KYC HASH:", hash);
+
+            if(self.needsKYC && !self.doneKYC) {
+                getKYCInfo();
+            }else {
+                buyTokens();
+            }
+        })
     });
 }
 

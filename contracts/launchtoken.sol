@@ -215,6 +215,7 @@ contract ConstantPriceCrowdsale{
     bool public started = false;
     bool public withdrawn = false;
     uint public raised = 0;
+    //uint public minimum = 0;
     uint public initialBalance;
 
     bool public useWhitelist = false;
@@ -409,6 +410,26 @@ contract TokenLauncherInterface {
     function listCrowdsalesForAddress(address _owner) public view returns (address[]);
 }
 
+contract KYCRegistry {
+    address public owner;
+
+    mapping(address => string) public registry;
+
+    event Registered(address user, string hash);
+
+    constructor(address _owner) public {
+        owner = _owner;
+    }
+
+    function register(address _user, string _hash) public {
+        require(msg.sender == owner);
+
+        registry[_user] = _hash;
+
+        emit Registered(_user, _hash);
+    }
+}
+
 contract LaunchToken {
 
     TokenLauncherInterface tokenLauncher;
@@ -448,7 +469,10 @@ contract LaunchToken {
         emit TokenLaunched(msg.sender, token, crowdsale, _symbol);
     }
 
+    event LauncherUpgraded(address upgrader, address oldLauncher, address newLauncher);
+
     function upgradeLauncher(address _launcher) onlyOwner public {
+        emit LauncherUpgraded(msg.sender, tokenLauncher, _launcher);
         tokenLauncher = TokenLauncherInterface(_launcher);
     }
 

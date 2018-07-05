@@ -1,4 +1,4 @@
- pragma solidity ^0.4.21;
+ pragma solidity ^0.4.24;
 
  contract ERC20 {
     string public name;
@@ -257,7 +257,7 @@ contract ConstantPriceCrowdsale{
         assert(started);
         assert(!finished);
 
-        if(useWhitelist && !whitelisted[msg.sender]) revert();
+        if(useWhitelist && !whitelisted[msg.sender]) revert("not whitelisted");
 
         ERC20 tok = ERC20(token);
         uint remaining = tok.balanceOf(this);
@@ -276,7 +276,7 @@ contract ConstantPriceCrowdsale{
         assert(msg.sender == owner);
         assert(finished);
 
-        uint bal = this.balance;
+        uint bal = address(this).balance;
         msg.sender.transfer(bal);
 
         withdrawn = true;
@@ -309,7 +309,7 @@ contract ConstantPriceCrowdsale{
         if(withdrawn){
             return raised;
         }else{
-            return this.balance;
+            return address(this).balance;
         }
     }
 
@@ -346,6 +346,8 @@ contract Crowdsale {
 }
 
 contract TokenLauncher {
+    using SafeMath for uint;
+
     address owner;
     constructor() public {
         owner = msg.sender;
@@ -354,38 +356,78 @@ contract TokenLauncher {
     address[] public tokens;
     address[] public crowdsales;
 
-    mapping(address => address) public tokenOwners;
+    // token => (user => balance)
+    mapping(address => mapping(address => uint) ) balances;
+
+    /*mapping(address => address) public tokenOwners;
     mapping(address => address) public crowdsaleOwners;
     mapping(address => address[]) public ownersTokens;
-    mapping(address => address[]) public ownersCrowdsales;
+    mapping(address => address[]) public ownersCrowdsales;*/
 
-    event TokenLaunched(address owner, address token, address crowdsale, string symbol, uint balance);
+    event TokenLaunched(address owner, address token, uint initialSupply, string symbol, string name,  address crowdsale, uint quantityForSale);
+    //event CrowdsaleLaunched(address owner, address token, address crowdsale, string symbol, string name, uint quantityForSale);
 
-    function launch( uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public returns (address, address) { //uint[10] _intArgs, address[10] _addressArgs
+    function launch(address _token, uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist, uint _quantityForSale) public returns (address, address) { //uint[10] _intArgs, address[10] _addressArgs
 
-        address token =  new TokenERC20(_initialSupply, _name, _symbol, this);
-        address crowdsale = new ConstantPriceCrowdsale(token, tx.origin, _price, _whitelist);
+        address token = _token==address(0) ? _launchToken(_initialSupply, _name, _symbol) : _token;
+        address crowdsale = _saleType!=0 ? _launchSale(token, _quantityForSale, _price, _saleType, _whitelist) : address(0);
 
-        tokens.push(token);
-        crowdsales.push(crowdsale);
-
-        ERC20 tok = ERC20(token);
-        uint amount = _initialSupply * 10 ** 18;
-
-        tok.transfer(crowdsale, amount);
-
-        tokenOwners[token] = tx.origin;
-        ownersTokens[tx.origin].push(token);
-
-        crowdsaleOwners[crowdsale] = tx.origin;
-        ownersCrowdsales[tx.origin].push(crowdsale);
-
-        emit TokenLaunched(tx.origin, token, crowdsale, _symbol, tok.balanceOf(this));
+        emit TokenLaunched(tx.origin, token, _initialSupply, _symbol, _name, crowdsale, _quantityForSale);
 
         return (token, crowdsale);
     }
 
-    function listTokens() public view returns (address[]) {
+    /*function launchToken(uint _initialSupply, string _name, string _symbol) public returns (address){
+        address token = _launchToken(_initialSupply, _name, _symbol);
+
+        balances[token][tx.origin] = _initialSupply;
+
+        emit TokenLaunched(tx.origin, token, _initialSupply, _symbol, _name, address(0), 0);
+        return token;
+    }
+
+    function launchCrowdsale(address _token, uint _quantity, uint _price, uint _saleType, bool _whitelist) public returns (address) {
+        if(balances[_token][tx.origin] < _quantity) revert("not enough balance");
+        balances[_token][tx.origin] = balances[_token][tx.origin].sub(_quantity);
+
+        address crowdsale = _launchSale(_token, _quantity, _price, _saleType, _whitelist);
+        ERC20 tok = ERC20(_token);
+
+        emit CrowdsaleLaunched(tx.origin, _token, crowdsale, tok.symbol(), tok.name(), _quantity);
+        return crowdsale;
+    }*/
+
+    function _launchToken(uint _initialSupply, string _name, string _symbol) internal returns(address) {
+
+        address token =  new TokenERC20(_initialSupply, _name, _symbol, this);
+
+        /*tokens.push(token);
+        tokenOwners[token] = tx.origin;
+        ownersTokens[tx.origin].push(token);*/
+
+        return token;
+    }
+
+    function _launchSale(address _token, uint _quantity, uint _price, uint saleType, bool _whitelist) internal returns (address) {
+        address crowdsale = new ConstantPriceCrowdsale(_token, tx.origin, _price, _whitelist);
+
+        tokens.push(_token);
+        crowdsales.push(crowdsale);
+
+        ERC20 tok = ERC20(_token);
+        uint decimals = uint(tok.decimals());
+        uint amount = _quantity * 10 ** decimals;
+
+        tok.transfer(crowdsale, amount);
+
+        /*crowdsales.push(crowdsale);
+        crowdsaleOwners[crowdsale] = tx.origin;
+        ownersCrowdsales[tx.origin].push(crowdsale);*/
+
+        return crowdsale;
+    }
+
+    /*function listTokens() public view returns (address[]) {
         return ownersTokens[msg.sender];
     }
 
@@ -399,15 +441,18 @@ contract TokenLauncher {
 
     function listCrowdsalesForAddress(address _owner) public view returns (address[]) {
         return ownersCrowdsales[_owner];
-    }
+    }*/
 }
 
 contract TokenLauncherInterface {
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public returns (address, address);
-    function listTokens() public view returns (address[]);
+    function launch(address _token, uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist, uint _quantityForSale) public returns (address, address);
+    //function launchToken(uint _initialSupply, string _name, string _symbol) public returns (address);
+    //function launchCrowdsale(address _token, uint _quantity, uint _price, uint _saleType, bool _whitelist) public returns (address);
+
+    /*function listTokens() public view returns (address[]);
     function listTokensForAddress(address _owner) public view returns (address[]);
     function listCrowdsales() public view returns (address[]) ;
-    function listCrowdsalesForAddress(address _owner) public view returns (address[]);
+    function listCrowdsalesForAddress(address _owner) public view returns (address[]);*/
 }
 
 contract KYCRegistry {
@@ -432,7 +477,7 @@ contract KYCRegistry {
 
 contract LaunchToken {
 
-    TokenLauncherInterface tokenLauncher;
+    TokenLauncherInterface public tokenLauncher;
 
     address public owner;
 
@@ -440,11 +485,15 @@ contract LaunchToken {
     address[] public crowdsales;
 
     mapping(address => address) public tokenOwners;
-    mapping(address => address) public crowdsaleOwners;
     mapping(address => address[]) public ownersTokens;
-    mapping(address => address[]) public ownersCrowdsales;
 
-    event TokenLaunched(address owner, address token, address crowdsale, string symbol);
+    mapping(address => address) public crowdsaleOwners;
+    mapping(address => address[]) public ownersCrowdsales;
+    mapping(address => address[]) public tokensCrowdsales;
+    mapping(address => address[2][]) public ownersTokenCrowdsaales;
+
+    event TokenLaunched(address owner, address token, string symbol, string name, address crowdsale);
+    //event CrowdsaleLaunched(address owner, address token, address crowdsale, string symbol, string name, uint quantityForSale);
 
     modifier onlyOwner { require(msg.sender == owner); _; }
 
@@ -454,21 +503,44 @@ contract LaunchToken {
         tokenLauncher = TokenLauncherInterface(launcher);
     }
 
-    function launch(uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist) public {
-        (address token, address crowdsale) = tokenLauncher.launch(_initialSupply, _name, _symbol, _price, _saleType, _whitelist);
+    function launch(address _token, uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, bool _whitelist, uint _quantityForSale) public {
+        (address token, address crowdsale) = tokenLauncher.launch(_token, _initialSupply, _name, _symbol, _price, _saleType, _whitelist, _quantityForSale);
 
-        tokenOwners[token] = msg.sender;
-        ownersTokens[msg.sender].push(token);
+        _registerToken(token);
+        if(crowdsale != address(0)) _registerCrowdsale(crowdsale, token);
 
-        crowdsaleOwners[crowdsale] = msg.sender;
-        ownersCrowdsales[msg.sender].push(crowdsale);
-
-        tokens.push(token);
-        crowdsales.push(crowdsale);
-
-        emit TokenLaunched(msg.sender, token, crowdsale, _symbol);
+        emit TokenLaunched(msg.sender, token, _symbol, _name, crowdsale);
     }
 
+    /*function launchToken(uint _initialSupply, string _name, string _symbol) public {
+        address token = tokenLauncher.launchToken(_initialSupply, _name, _symbol);
+        _registerToken(token);
+        emit TokenLaunched(msg.sender, token, _symbol, _name, address(0));
+    }*/
+
+
+    /*function launchCrowdsale(address _token, uint _quantity, uint _price, uint _saleType, bool _whitelist) public {
+        address crowdsale = tokenLauncher.launchCrowdsale(_token, _quantity, _price, _saleType, _whitelist);
+        _registerCrowdsale(crowdsale, _token);
+        ERC20 tok = ERC20(_token);
+        emit CrowdsaleLaunched(msg.sender, _token, crowdsale, tok.symbol(), tok.name(), _quantity);
+    }*/
+
+    function _registerCrowdsale(address crowdsale, address token) internal {
+        crowdsaleOwners[crowdsale] = msg.sender;
+        ownersCrowdsales[msg.sender].push(crowdsale);
+        tokensCrowdsales[token].push(crowdsale);
+        ownersTokenCrowdsaales[msg.sender].push([token, crowdsale]);
+        crowdsales.push(crowdsale);
+    }
+
+    function _registerToken(address token) internal {
+        tokenOwners[token] = msg.sender;
+        ownersTokens[msg.sender].push(token);
+        tokens.push(token);
+    }
+
+    //upgrade
     event LauncherUpgraded(address upgrader, address oldLauncher, address newLauncher);
 
     function upgradeLauncher(address _launcher) onlyOwner public {
@@ -477,21 +549,22 @@ contract LaunchToken {
     }
 
     //track tokens
-    function listTokens() public view returns (address[]) {
-        return ownersTokens[msg.sender];
-    }
-    function listTokensForAddress(address _owner) public view returns (address[]) {
+
+    function listTokens(address _owner) public view returns (address[]) {
         return ownersTokens[_owner];
     }
-    function listCrowdsales() public view returns (address[]) {
-        return ownersCrowdsales[msg.sender];
-    }
-    function listCrowdsalesForAddress(address _owner) public view returns (address[]) {
+    function listCrowdsales(address _owner) public view returns (address[]) {
         return ownersCrowdsales[_owner];
     }
-
-
-    function getTokenLauncher() public view returns(address){
-        return tokenLauncher;
+    function listTokensCrowdsales(address _token) public view returns (address[]) {
+        return tokensCrowdsales[_token];
     }
+    function listOwnersTokenCrowdsales(address _owner) public view returns (address[2][]){
+        return ownersTokenCrowdsaales[_owner];
+    }
+
+
+    /*function getTokenLauncher() public view returns(address){
+        return tokenLauncher;
+    }*/
 }

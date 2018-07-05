@@ -101,11 +101,6 @@ function LaunchToken(crowdsale_address){
 
     setUiState(false);
 
-    /*if(!web3 || !web3.eth || !web3.eth.defaultAccount){
-        alert("Please log into Metamask, select ROPSTEN testnet network, and refresh the page");
-        return;
-    }*/
-
     var crowdsaleAbi = [
         {
             "constant": true,
@@ -740,6 +735,8 @@ function LaunchToken(crowdsale_address){
         return;
     }
 
+    self.localhost = web3.currentProvider.host && web3.currentProvider.host.indexOf('localhost') >= 0;
+
     console.log("ACCOUNT:");
     console.log(web3.eth.defaultAccount);
 
@@ -784,9 +781,11 @@ function LaunchToken(crowdsale_address){
                 setUiState(true)
             }else{
                 if(finished){
-                    setUiState(false, this.saleFinishedText)
+                    console.log("SALE ALREADY FINISHED")
+                    setUiState(false, self.saleFinishedText)
                 }else if(!started){
-                    setUiState(false, this.saleNotStartedText)
+                    console.log("SALE NOT STARTED")
+                    setUiState(false, self.saleNotStartedText)
                 }
             }
         })
@@ -815,7 +814,7 @@ function LaunchToken(crowdsale_address){
     $("#amount-to-buy").on("keyup", calculateAmountBought);
 
     crowdsale.Started().watch(function(){  setUiState(true); })
-    crowdsale.Finished().watch(function(){  setUiState(false, "Sale Finished"); })
+    crowdsale.Finished().watch(function(){  setUiState(false, self.saleFinishedText); })
     crowdsale.Deposited().watch(function(err, res){
         loadAmountRaised();
 
@@ -923,9 +922,8 @@ function LaunchToken(crowdsale_address){
         var modal_overlay = document.createElement('div');
         modal_overlay.onclick = closeModal;
         modal_overlay.style = overlayCss + "display:none;background-color:rgba(255,255,255,0.8);"
-        modal_overlay.show = function(){
-            modal_overlay.style.display = 'block';
-        }
+        modal_overlay.show = function(){ modal_overlay.style.display = 'block'; }
+        modal_overlay.hide = function(){ modal_overlay.style.display = 'none'; }
         modal_overlay.append = modal_overlay.appendChild;
         modal.append(modal_overlay);
 
@@ -1035,6 +1033,8 @@ function LaunchToken(crowdsale_address){
 
     $('#buy-button').on("click", function(){
         console.log("NEED KYC?", self.needsKYC);
+
+        if(self.localhost) self.doneKYC = true;
 
         registry.registry.call(web3.eth.defaultAccount, function(err, hash){
             console.log("YOUR CURRENT KYC HASH:", hash);

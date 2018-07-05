@@ -38,24 +38,33 @@
 
 <table>
     <tr>
-        <td>Type</td>
-        <td><select style="width:100%" id="sale_type"><option value="0">Flat Price</option></select></td>
-    </tr>
-    <tr>
         <td>Symbol:</td>
         <td><input id="symbol" type="text" placeholder="SYM" /></td>
     </tr>
-    <tr>
+    <tr class="token-input">
         <td>Name:</td>
         <td><input id="name" type="text" placeholder="TokenName" /></td>
     </tr>
-    <tr>
+    <tr class="token-input">
         <td>Supply:</td>
         <td><input id="supply" type="number" value="1000000000" /></td>
     </tr>
     <tr>
+        <td>Sale</td>
+        <td>
+            <select style="width:100%" id="sale_type">
+                <option value="0">No Sale</option>
+                <option value="1" selected>Flat Price</option>
+            </select>
+        </td>
+    </tr>
+    <tr class="crowdsale-input">
         <td>Price:</td>
         <td><input id="price" type="number" value="0.01" /><span style="color:lightgray; margin-left:-40px;">ETH</span></td>
+    </tr>
+    <tr class="crowdsale-input">
+        <td>Sell:</td>
+        <td><input id="sell" type="number" value="500000000" /></td>
     </tr>
     <tr>
         <td></td>
@@ -66,20 +75,18 @@
 <div id="spinner"></div>
 
 <script>
-var launchtoken_address = "0xf9f12a4a2ddde5ee3e66efecfe3e656241ac5797";
+var launchtoken_address = "0xb3f2b1fd27e86e0f3221ac82814b151a3e4f641f";
 var etherscan_base_url = 'https://ropsten.etherscan.io/address/';
 
 if (typeof web3 !== 'undefined') {
     console.log("USING INJECTED WEB3");
     web3 = new Web3(web3.currentProvider);
-    launchtoken_address = "0x4b93440823361281e4e68404d75ca4723de0afb5";
+    launchtoken_address = "0xcd755eecf636efa615e06c38d3884ef5829b4001";
 } else {
     // set the provider you want from Web3.providers
     console.log("USING LOCAL WEB3");
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
-
-var za = "0x0000000000000000000000000000000000000000";
 
 function LaunchTokenDashboard(){
 
@@ -89,31 +96,30 @@ function LaunchTokenDashboard(){
             "inputs": [
                 {
                     "indexed": false,
-                    "name": "owner",
+                    "name": "upgrader",
                     "type": "address"
                 },
                 {
                     "indexed": false,
-                    "name": "token",
+                    "name": "oldLauncher",
                     "type": "address"
                 },
                 {
                     "indexed": false,
-                    "name": "crowdsale",
+                    "name": "newLauncher",
                     "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "symbol",
-                    "type": "string"
                 }
             ],
-            "name": "TokenLaunched",
+            "name": "LauncherUpgraded",
             "type": "event"
         },
         {
             "constant": false,
             "inputs": [
+                {
+                    "name": "_token",
+                    "type": "address"
+                },
                 {
                     "name": "_initialSupply",
                     "type": "uint256"
@@ -137,6 +143,10 @@ function LaunchTokenDashboard(){
                 {
                     "name": "_whitelist",
                     "type": "bool"
+                },
+                {
+                    "name": "_quantityForSale",
+                    "type": "uint256"
                 }
             ],
             "name": "launch",
@@ -144,6 +154,38 @@ function LaunchTokenDashboard(){
             "payable": false,
             "stateMutability": "nonpayable",
             "type": "function"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "token",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "name": "symbol",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "name": "name",
+                    "type": "string"
+                },
+                {
+                    "indexed": false,
+                    "name": "crowdsale",
+                    "type": "address"
+                }
+            ],
+            "name": "TokenLaunched",
+            "type": "event"
         },
         {
             "inputs": [],
@@ -205,21 +247,12 @@ function LaunchTokenDashboard(){
         },
         {
             "constant": true,
-            "inputs": [],
-            "name": "getTokenLauncher",
-            "outputs": [
+            "inputs": [
                 {
-                    "name": "",
+                    "name": "_owner",
                     "type": "address"
                 }
             ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
             "name": "listCrowdsales",
             "outputs": [
                 {
@@ -239,11 +272,11 @@ function LaunchTokenDashboard(){
                     "type": "address"
                 }
             ],
-            "name": "listCrowdsalesForAddress",
+            "name": "listOwnersTokenCrowdsales",
             "outputs": [
                 {
                     "name": "",
-                    "type": "address[]"
+                    "type": "address[2][]"
                 }
             ],
             "payable": false,
@@ -252,7 +285,12 @@ function LaunchTokenDashboard(){
         },
         {
             "constant": true,
-            "inputs": [],
+            "inputs": [
+                {
+                    "name": "_owner",
+                    "type": "address"
+                }
+            ],
             "name": "listTokens",
             "outputs": [
                 {
@@ -268,11 +306,11 @@ function LaunchTokenDashboard(){
             "constant": true,
             "inputs": [
                 {
-                    "name": "_owner",
+                    "name": "_token",
                     "type": "address"
                 }
             ],
-            "name": "listTokensForAddress",
+            "name": "listTokensCrowdsales",
             "outputs": [
                 {
                     "name": "",
@@ -330,9 +368,50 @@ function LaunchTokenDashboard(){
                 {
                     "name": "",
                     "type": "uint256"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "ownersTokenCrowdsaales",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
                 }
             ],
             "name": "ownersTokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [],
+            "name": "tokenLauncher",
             "outputs": [
                 {
                     "name": "",
@@ -371,6 +450,29 @@ function LaunchTokenDashboard(){
                 }
             ],
             "name": "tokens",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "address"
+                },
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "name": "tokensCrowdsales",
             "outputs": [
                 {
                     "name": "",
@@ -596,263 +698,6 @@ function LaunchTokenDashboard(){
                 }
             ],
             "name": "Approval",
-            "type": "event"
-        }
-    ];
-    var launcherAbi = [
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "_owner",
-                    "type": "address"
-                }
-            ],
-            "name": "listTokensForAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                },
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "ownersTokens",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "_owner",
-                    "type": "address"
-                }
-            ],
-            "name": "listCrowdsalesForAddress",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "tokens",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "listCrowdsales",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [],
-            "name": "listTokens",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "crowdsaleOwners",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": false,
-            "inputs": [
-                {
-                    "name": "_initialSupply",
-                    "type": "uint256"
-                },
-                {
-                    "name": "_name",
-                    "type": "string"
-                },
-                {
-                    "name": "_symbol",
-                    "type": "string"
-                },
-                {
-                    "name": "_price",
-                    "type": "uint256"
-                },
-                {
-                    "name": "_saleType",
-                    "type": "uint256"
-                }
-            ],
-            "name": "launch",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                },
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "name": "tokenOwners",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "crowdsales",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
-            "inputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                },
-                {
-                    "name": "",
-                    "type": "uint256"
-                }
-            ],
-            "name": "ownersCrowdsales",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "address"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "inputs": [],
-            "payable": false,
-            "stateMutability": "nonpayable",
-            "type": "constructor"
-        },
-        {
-            "anonymous": false,
-            "inputs": [
-                {
-                    "indexed": false,
-                    "name": "owner",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "token",
-                    "type": "address"
-                },
-                {
-                    "indexed": false,
-                    "name": "crowdsale",
-                    "type": "address"
-                }
-            ],
-            "name": "TokenLaunched",
             "type": "event"
         }
     ];
@@ -1185,6 +1030,8 @@ function LaunchTokenDashboard(){
     var LaunchToken = null;
     var TokenLauncher = null;
 
+    var zero_address = "0x0000000000000000000000000000000000000000";
+
     function startApp(){
 
         web3.eth.defaultAccount = web3.eth.accounts[0];
@@ -1226,10 +1073,6 @@ function LaunchTokenDashboard(){
         })
 
 
-        LaunchToken.listTokens.call(function(err,res){
-            console.log("TOKEN", err || res)
-        })
-
         LaunchToken.TokenLaunched().watch(launchedCallback);
     }
 
@@ -1269,110 +1112,158 @@ function LaunchTokenDashboard(){
         var row = document.createElement('tr');
 
         var token_address = res[t];
-        var crowdsale_address = res2[t];
+
+        var erc20 = web3.eth.contract(erc20Abi).at(token_address);
+
+        var totalSupply = 0;
 
         var symbol = document.createElement('td');
         symbol.id = token_address;
         row.appendChild(symbol);
 
+        erc20.symbol.call(function (err, res) {
+            symbol.innerHTML = res;
+            symbol.setAttribute('symbol', res);
+            symbol.style.cursor = "pointer";
+            symbol.onclick = function(){ $('#symbol').val(res).trigger('change'); }
+        });
+
         var address = document.createElement("td");
         address.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + token_address + "'>" + token_address + "</a></small>";
         row.appendChild(address);
 
-        var address2 = document.createElement("td");
-        address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + crowdsale_address + "'>" + crowdsale_address + "</a></small>";
-        row.appendChild(address2);
-
-        var erc20 = web3.eth.contract(erc20Abi).at(token_address);
-        erc20.symbol.call(function (err, res) {
-            symbol.innerHTML = res;
+        erc20.totalSupply.call(function(err, totalSupplyResp){
+            console.log("TOTAL SUPPLY", totalSupplyResp.toNumber())
+            totalSupply = totalSupplyResp;
+            address.title = "total supply: " + totalSupply.div(1e18).toNumber();
         });
 
-        erc20.balanceOf.call(crowdsale_address, function(err,res){
-            console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
-        });
+        var sales_for_token = 0;
 
-        var status = document.createElement("td");
-        var action = document.createElement("td");
-        status.id = crowdsale_address;
+        for(var k in res2) {
+            if(res2[k][0] != token_address) continue;
 
-        var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+            function loadCrowdsaleRow() {
+                var crowdsale_address = res2[k][1];
 
-        crowdsale.Started().watch(loadCrowdsaleStatus);
-        crowdsale.Finished().watch(loadCrowdsaleStatus);
-        crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
-        crowdsale.Deposited().watch(loadAmountRaised);
-
-        function loadCrowdsaleStatus() {
-            hideSpinner();
-            crowdsale.withdrawn.call(function (err, withdrawn) {
-            crowdsale.started.call(function (err, started) {
-            crowdsale.finished.call(function (err, finished) {
-                var stat = document.createElement("span");
-                //stat.style.fontSize = '80%';
-                var btn = document.createElement("button");
-                //btn.style.fontSize = '80%';
-                if (started && !finished) {
-                    stat.innerHTML = "started";
-                    btn.innerHTML = "finish";
-                    btn.onclick = function () {
-                        crowdsale.finish(function (err, res) {
-                            showSpinner();
-                        })
-                    }
-                } else if (finished) {
-                    if(!withdrawn) {
-                        btn.innerHTML = "withdraw";
-                        btn.onclick = function () {
-                            crowdsale.withdraw(function (err, res) {
-                                showSpinner();
-                            })
-                        }
-                        stat.innerHTML = "finished";
-                    }else{
-                        stat.innerHTML = "completed"
-                    }
-                } else {
-                    stat.innerHTML = "new";
-                    btn.innerHTML = "start";
-                    btn.onclick = function () {
-                        crowdsale.start(function (err, res) {
-                            showSpinner();
-                        })
-                    }
+                if (sales_for_token > 0) {
+                    table.append(row);
+                    row = document.createElement('tr');
+                    for (var j = 0; j < 2; j++) row.appendChild(document.createElement('td'));
                 }
 
-                status.innerHTML = "";
-                status.appendChild(stat);
-                action.innerHTML = "";
-                if(btn.innerHTML) action.appendChild(btn);
-            });
-            });
-            });
+                var address2 = document.createElement("td");
+                address2.innerHTML = "<small><a target='_blank' href='" + etherscan_base_url + crowdsale_address + "'>" + crowdsale_address + "</a></small>";
+                row.appendChild(address2);
 
+                var crowdsale = web3.eth.contract(crowdsaleAbi).at(crowdsale_address);
+
+                var startingBalance = 0;
+
+                function loadBalance() {
+                    erc20.balanceOf.call(crowdsale_address, function (err, currentBlance) {
+                        //console.log("CROWDSALE TOKEN BALANCE", res.toNumber())
+                        address2.title = "remaining balance: " +
+                            (currentBlance.div(1e18).toNumber()) + " / " + (startingBalance.div(1e18).toNumber()) + "  (" +
+                            currentBlance.div(startingBalance).mul(100) +"%)";
+                    });
+                }
+                crowdsale.startingBalance.call(function(err, startingBalancRespe){
+                    startingBalance = startingBalancRespe;
+                    loadBalance();
+                });
+
+                var status = document.createElement("td");
+                var action = document.createElement("td");
+                status.id = crowdsale_address;
+
+
+                crowdsale.Started().watch(loadCrowdsaleStatus);
+                crowdsale.Finished().watch(loadCrowdsaleStatus);
+                crowdsale.Withdrawn().watch(loadCrowdsaleStatus);
+                crowdsale.Deposited().watch(function(){ loadAmountRaised(); loadBalance(); });
+
+                function loadCrowdsaleStatus() {
+                    hideSpinner();
+                    crowdsale.withdrawn.call(function (err, withdrawn) {
+                        crowdsale.started.call(function (err, started) {
+                            crowdsale.finished.call(function (err, finished) {
+                                var stat = document.createElement("span");
+                                //stat.style.fontSize = '80%';
+                                var btn = document.createElement("button");
+                                //btn.style.fontSize = '80%';
+                                if (started && !finished) {
+                                    stat.innerHTML = "started";
+                                    btn.innerHTML = "finish";
+                                    btn.onclick = function () {
+                                        crowdsale.finish(function (err, res) {
+                                            showSpinner();
+                                        })
+                                    }
+                                } else if (finished) {
+                                    if (!withdrawn) {
+                                        btn.innerHTML = "withdraw";
+                                        btn.onclick = function () {
+                                            crowdsale.withdraw(function (err, res) {
+                                                showSpinner();
+                                            })
+                                        }
+                                        stat.innerHTML = "finished";
+                                    } else {
+                                        stat.innerHTML = "completed"
+                                    }
+                                } else {
+                                    stat.innerHTML = "new";
+                                    btn.innerHTML = "start";
+                                    btn.onclick = function () {
+                                        crowdsale.start(function (err, res) {
+                                            showSpinner();
+                                        })
+                                    }
+                                }
+
+                                status.innerHTML = "";
+                                status.appendChild(stat);
+                                action.innerHTML = "";
+                                if (btn.innerHTML) action.appendChild(btn);
+                            });
+                        });
+                    });
+
+                }
+
+                row.append(status);
+                row.append(action);
+                loadCrowdsaleStatus();
+
+
+                var raised = document.createElement("td");
+                raised.style.textAlign = "right";
+
+                function loadAmountRaised() {
+                    crowdsale.getAmountRaised.call(function (err, res) {
+                        raised.innerHTML = (res / 1e18) //+ " <small>ETH</small>";
+                    })
+                }
+
+                row.append(raised);
+                loadAmountRaised();
+            }
+
+            loadCrowdsaleRow();
+
+
+            sales_for_token++;
         }
-        row.append(status);
-        row.append(action);
-        loadCrowdsaleStatus();
 
-
-        var raised = document.createElement("td");
-        raised.style.textAlign = "right";
-        function loadAmountRaised() {
-            crowdsale.getAmountRaised.call(function (err, res) {
-                raised.innerHTML = (res / 1e18) //+ " <small>ETH</small>";
-            })
-        }
-        row.append(raised);
-        loadAmountRaised();
-
+        if(sales_for_token == 0){ for(var i=0; i<4; i++) row.appendChild(document.createElement("td"));  }
 
         table.append(row);
     }
 
     function listTokens(){
 
-        LaunchToken.getTokenLauncher.call(function(err, res) {
+        LaunchToken.tokenLauncher.call(function(err, res) {
             console.log("LAUNCHER", res);
             $('#launcher').val(res);
         })
@@ -1381,10 +1272,12 @@ function LaunchTokenDashboard(){
 
         clearTable(table);
 
-        LaunchToken.listTokens.call(function(err, res){
+        LaunchToken.listTokens.call(web3.eth.defaultAccount, function(err, res){
             console.log("LAUNCHTOKEN TOKENS",  err||res);
 
-            LaunchToken.listCrowdsales.call(function(err, res2){
+            LaunchToken.listOwnersTokenCrowdsales.call(web3.eth.defaultAccount, function(err, res2){
+
+                console.log("TOKENS->SALES", res2);
 
                 for(var t in res) {
                     addTokenDiv(table, res, res2, t);
@@ -1404,26 +1297,47 @@ function LaunchTokenDashboard(){
 
     this.upgradeLauncher = upgradeLauncher;
 
+    function toggleSymbolInputs(err,res) {
+        var symbol = $("#symbol").val();
+        console.log("SYMBOL", symbol)
+        var known_address = ($("[symbol='" + symbol + "']")[0] || {}).id;
+        $('.token-input')[known_address ? 'hide' : 'show']();
+    }
+
+    $('#symbol').on('change', toggleSymbolInputs).on('keyup', toggleSymbolInputs);
+
+    $('#sale_type').on('change', function(err,res) {
+        var sale_type = $('#sale_type').val();
+        console.log("SALE TYPE", sale_type)
+        $('.crowdsale-input')[sale_type=='0' ? 'hide' : 'show']();
+    });
+
     function launchToken(){
         var symbol = $("#symbol").val();
         var name = $("#name").val();
         var price = $("#price").val();
         var supply = $('#supply').val();
         var sale_type = $('#sale_type').val();
+        var sell_quantity = $('#sell').val();
 
-        if(!name || !symbol || !supply || !price){
+        var known_address = ($("[symbol='" + symbol + "']")[0] || {}).id;
+        console.log("KNOWN ADDRESS", known_address)
+
+        if( !known_address && (!name || !symbol || !supply) || !price){
             alert("please enter Symbol, Name, Price, and Supply");
             return;
         }
 
-        console.log("launching", symbol);
+        //return;
+
+        console.log("launching", symbol, known_address);
 
         console.log("as,", web3.eth.defaultAccount);
 
-        console.log("LAUNCHING", supply, name, symbol, price + 'e18', sale_type, "0");
+        console.log("LAUNCHING", [supply, name, symbol, price + 'e18', sale_type, "0", supply] );
 
         //uint _initialSupply, string _name, string _symbol, uint _price, uint _saleType, uint _whitelist
-        LaunchToken.launch(supply, name, symbol, price + 'e18', sale_type, 0,
+        LaunchToken.launch(known_address || zero_address, supply, name, symbol, price + 'e18', sale_type, 0, sell_quantity,
             {gas: 6000000, from: web3.eth.defaultAccount}, function(err, res){
             console.log("LAUNCHED TOKEN:",err || res);
 

@@ -34,7 +34,7 @@
 </table>
 
 <hr />
-<h2>launch new</h2>
+<h2>launch new <span id="to_launch"></span></h2>
 
 <table>
     <tr>
@@ -1297,20 +1297,35 @@ function LaunchTokenDashboard(){
 
     this.upgradeLauncher = upgradeLauncher;
 
-    function toggleSymbolInputs(err,res) {
+    function toggleSymbolInputs() {
         var symbol = $("#symbol").val();
         console.log("SYMBOL", symbol)
         var known_address = ($("[symbol='" + symbol + "']")[0] || {}).id;
         $('.token-input')[known_address ? 'hide' : 'show']();
+        updateToLaunchLabel();
     }
 
     $('#symbol').on('change', toggleSymbolInputs).on('keyup', toggleSymbolInputs);
 
-    $('#sale_type').on('change', function(err,res) {
+    $('#sale_type').on('change', function() {
         var sale_type = $('#sale_type').val();
         console.log("SALE TYPE", sale_type)
         $('.crowdsale-input')[sale_type=='0' ? 'hide' : 'show']();
+        updateToLaunchLabel();
     });
+
+    function updateToLaunchLabel(){
+        var known_address = $("[symbol='" + $("#symbol").val() + "']")[0];
+        var sale_type = $('#sale_type').val();
+
+        var parts = [];
+        if(!known_address) parts.push("token")
+        if(sale_type != "0") parts.push("sale")
+
+        $("#to_launch").html(parts.join('+'));
+    }
+
+    updateToLaunchLabel();
 
     function launchToken(){
         var symbol = $("#symbol").val();

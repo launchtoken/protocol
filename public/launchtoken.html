@@ -68,7 +68,7 @@
     </tr>
     <tr>
         <td></td>
-        <td><button style="float:right" class="pull-right" onclick="window.dashboard.launchToken()">launch</button></td>
+        <td><button style="float:right" class="pull-right" id="launch_button" onclick="window.dashboard.launchToken()">launch</button></td>
     </tr>
 </table>
 
@@ -1323,6 +1323,8 @@ function LaunchTokenDashboard(){
         if(sale_type != "0") parts.push("sale")
 
         $("#to_launch").html(parts.join('+'));
+
+        $('#launch_button')[ parts.length == 0 ? 'hide' : 'show' ]();
     }
 
     updateToLaunchLabel();
